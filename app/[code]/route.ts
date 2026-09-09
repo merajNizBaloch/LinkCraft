@@ -19,7 +19,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   }
 
   try {
-    const response = await supabaseAdminFetch("rpc/resolve_short_link", {
+    const response = await supabaseAdminFetch("rpc/linkcraft_resolve_short_link", {
       method: "POST",
       body: JSON.stringify({ p_code: code }),
     });
