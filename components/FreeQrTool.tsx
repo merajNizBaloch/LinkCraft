@@ -11,7 +11,7 @@ function normalizeUrl(value: string) {
 }
 
 export default function FreeQrTool() {
-  const [value, setValue] = useState("https://techcraftsolution.com");
+  const [value, setValue] = useState("");
   const normalized = useMemo(() => {
     const candidate = normalizeUrl(value);
     if (!candidate) return "";
@@ -32,7 +32,7 @@ export default function FreeQrTool() {
             <input
               value={value}
               onChange={(event) => setValue(event.target.value)}
-              placeholder="https://example.com"
+              placeholder="Paste a website or link"
               className="min-w-0 flex-1 bg-transparent py-3.5 text-sm font-semibold outline-none"
               aria-label="Link to convert into a QR code"
             />
