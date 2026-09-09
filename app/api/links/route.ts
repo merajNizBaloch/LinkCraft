@@ -6,7 +6,7 @@ import {
   normalizeAlias,
   normalizeDestination,
 } from "@/lib/links";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { readSupabaseError, supabaseAdminFetch } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -14,6 +14,14 @@ type CreateLinkBody = {
   destination?: unknown;
   alias?: unknown;
   expiresInDays?: unknown;
+};
+
+type LinkRow = {
+  code: string;
+  destination: string;
+  click_count: number;
+  expires_at: string | null;
+  created_at: string;
 };
 
 function publicOrigin(request: NextRequest) {
@@ -46,23 +54,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = getSupabaseAdmin();
     const attempts = alias ? 1 : 6;
 
     for (let attempt = 0; attempt < attempts; attempt += 1) {
       const code = alias || createRandomCode();
-      const { data, error } = await supabase
-        .from("links")
-        .insert({
-          code,
-          destination,
-          custom_alias: Boolean(alias),
-          expires_at: expiresAt,
-        })
-        .select("code,destination,click_count,expires_at,created_at")
-        .single();
+      const response = await supabaseAdminFetch(
+        "links?select=code,destination,click_count,expires_at,created_at",
+        {
+          method: "POST",
+          headers: { Prefer: "return=representation" },
+          body: JSON.stringify({
+            code,
+            destination,
+            custom_alias: Boolean(alias),
+            expires_at: expiresAt,
+          }),
+        },
+      );
 
-      if (!error && data) {
+      if (response.ok) {
+        const rows = (await response.json()) as LinkRow[];
+        const data = rows[0];
+
+        if (!data) {
+          return NextResponse.json(
+            { error: "The database did not return the new short link." },
+            { status: 500 },
+          );
+        }
+
         return NextResponse.json(
           {
             link: {
@@ -74,7 +94,8 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (error?.code === "23505") {
+      const error = await readSupabaseError(response);
+      if (response.status === 409 || error.code === "23505") {
         if (alias) {
           return NextResponse.json(
             { error: "That custom alias is already in use." },
