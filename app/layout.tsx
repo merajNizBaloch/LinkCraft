@@ -2,9 +2,19 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LinkCraft — Free Link Tools",
+  title: "LinkCraft — Free QR, URL & Link Tools",
   description:
-    "Shorten, clean, inspect, encode and share links. Generate QR codes, UTM URLs and WhatsApp links for free.",
+    "Paste a link once and turn it into a QR code, remove tracking parameters, build UTM campaigns, create WhatsApp links, encode URLs and inspect every part of a URL for free.",
+  applicationName: "LinkCraft",
+  keywords: [
+    "URL tools",
+    "QR code generator",
+    "URL cleaner",
+    "UTM builder",
+    "WhatsApp link generator",
+    "URL encoder",
+    "link inspector",
+  ],
 };
 
 export default function RootLayout({
