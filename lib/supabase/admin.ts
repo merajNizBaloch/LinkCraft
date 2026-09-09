@@ -1,26 +1,44 @@
 import "server-only";
 
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+export type SupabaseRestError = {
+  code?: string;
+  message?: string;
+  details?: string | null;
+  hint?: string | null;
+};
 
-let adminClient: SupabaseClient | null = null;
-
-export function getSupabaseAdmin() {
-  const url = process.env.SUPABASE_URL;
+function getConfig() {
+  const baseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
   const secretKey = process.env.SUPABASE_SECRET_KEY;
 
-  if (!url || !secretKey) {
+  if (!baseUrl || !secretKey) {
     throw new Error("Supabase server credentials are not configured.");
   }
 
-  if (!adminClient) {
-    adminClient = createClient(url, secretKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-    });
+  return { baseUrl, secretKey };
+}
+
+export async function supabaseAdminFetch(path: string, init: RequestInit = {}) {
+  const { baseUrl, secretKey } = getConfig();
+
+  const headers = new Headers(init.headers);
+  headers.set("apikey", secretKey);
+  headers.set("Accept", "application/json");
+  if (init.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
   }
 
-  return adminClient;
+  return fetch(`${baseUrl}/rest/v1/${path.replace(/^\//, "")}`, {
+    ...init,
+    headers,
+    cache: "no-store",
+  });
+}
+
+export async function readSupabaseError(response: Response): Promise<SupabaseRestError> {
+  try {
+    return (await response.json()) as SupabaseRestError;
+  } catch {
+    return { message: `Supabase request failed with status ${response.status}.` };
+  }
 }
