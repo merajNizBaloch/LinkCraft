@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import MobileQuickNav from "@/components/MobileQuickNav";
+import MobileTopHeader from "@/components/MobileTopHeader";
 import "./globals.css";
 
 const siteUrl = (
@@ -141,6 +142,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <MobileTopHeader />
         {children}
         <MobileQuickNav />
         <script
