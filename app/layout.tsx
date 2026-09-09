@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import MobileQuickNav from "@/components/MobileQuickNav";
 import "./globals.css";
 
 const siteUrl = (
@@ -141,6 +142,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         {children}
+        <MobileQuickNav />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}
