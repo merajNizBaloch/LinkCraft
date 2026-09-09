@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Check, Download, Palette, QrCode, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Check, Download, Palette, ShieldCheck } from "lucide-react";
 import FreeQrTool from "@/components/FreeQrTool";
 
 export const metadata: Metadata = {
@@ -28,7 +29,7 @@ export default function FreeQrCodeGeneratorPage() {
       <header className="border-b border-[#deded8] bg-[#f7f7f4]/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8">
           <Link href="/" className="inline-flex items-center gap-3 font-black tracking-[-0.04em]">
-            <img src="/linkcraft-mark.svg" alt="" className="h-9 w-9" />
+            <Image src="/linkcraft-mark.svg" alt="LinkCraft" width={36} height={36} priority />
             <span className="text-lg">Link<span className="text-[#FF5C35]">Craft</span></span>
           </Link>
           <Link href="/" className="secondary-action"><ArrowLeft size={15} /> All link tools</Link>
