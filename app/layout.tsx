@@ -1,21 +1,132 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+const siteUrl = (
+  process.env.LINKCRAFT_PUBLIC_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "https://linkcraft.techcraftsolution.com")
+).replace(/\/$/, "");
+
+const description =
+  "Free QR code generator and link tools by LinkCraft. Create custom QR codes, shorten URLs, clean tracking links, build UTM links, create WhatsApp links and inspect URLs.";
+
 export const metadata: Metadata = {
-  title: "LinkCraft — Free QR, URL & Link Tools",
-  description:
-    "Paste a link once and turn it into a QR code, remove tracking parameters, build UTM campaigns, create WhatsApp links, encode URLs and inspect every part of a URL for free.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Free QR Code Generator & Link Tools | LinkCraft",
+    template: "%s | LinkCraft",
+  },
+  description,
   applicationName: "LinkCraft",
+  authors: [{ name: "TechCraft", url: "https://techcraftsolution.com" }],
+  creator: "TechCraft",
+  publisher: "TechCraft",
+  category: "Utilities",
   keywords: [
-    "URL tools",
+    "free QR code generator",
     "QR code generator",
+    "custom QR code",
+    "QR code maker",
+    "free link tools",
+    "URL shortener",
+    "link shortener",
     "URL cleaner",
     "UTM builder",
     "WhatsApp link generator",
-    "URL encoder",
+    "URL encoder decoder",
     "link inspector",
   ],
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "/",
+    siteName: "LinkCraft",
+    title: "Free QR Code Generator & Link Tools | LinkCraft",
+    description,
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "LinkCraft free QR code generator and link tools",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Free QR Code Generator & Link Tools | LinkCraft",
+    description,
+    images: ["/opengraph-image"],
+  },
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
+
+export const viewport: Viewport = {
+  themeColor: "#FF5C35",
+  colorScheme: "light",
+};
+
+const structuredData = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "LinkCraft",
+    url: siteUrl,
+    description,
+    publisher: {
+      "@type": "Organization",
+      name: "TechCraft",
+      url: "https://techcraftsolution.com",
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "LinkCraft",
+    url: siteUrl,
+    applicationCategory: "UtilitiesApplication",
+    operatingSystem: "Any",
+    description,
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+    featureList: [
+      "Free custom QR code generator",
+      "URL shortener",
+      "URL tracking cleaner",
+      "UTM campaign builder",
+      "WhatsApp link generator",
+      "URL encoder and decoder",
+      "URL inspector",
+    ],
+    publisher: {
+      "@type": "Organization",
+      name: "TechCraft",
+      url: "https://techcraftsolution.com",
+    },
+  },
+];
 
 export default function RootLayout({
   children,
@@ -24,7 +135,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}
+        />
+      </body>
     </html>
   );
 }
