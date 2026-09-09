@@ -6,14 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
-    "cf:build": "opennextjs-cloudflare build",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "lint": "eslint ."
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "1.20.6",
     "lucide-react": "^0.544.0",
     "next": "^16.3.2",
     "qr-code-styling": "^1.9.2",
@@ -31,10 +26,6 @@
     "eslint": "^9.35.0",
     "eslint-config-next": "^16.3.2",
     "tailwindcss": "^4.1.13",
-    "typescript": "^5.9.2",
-    "wrangler": "4.129.1"
-  },
-  "overrides": {
-    "@aws-sdk/credential-provider-login": "3.972.77"
+    "typescript": "^5.9.2"
   }
 }
