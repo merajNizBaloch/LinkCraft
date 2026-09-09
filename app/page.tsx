@@ -127,9 +127,9 @@ function ResultBox({ label, value, positive = false }: { label: string; value: s
 export default function Home() {
   const [active, setActive] = useState<ToolId>("shorten");
   const [url, setUrl] = useState("");
-  const [utmSource, setUtmSource] = useState("instagram");
-  const [utmMedium, setUtmMedium] = useState("social");
-  const [utmCampaign, setUtmCampaign] = useState("launch");
+  const [utmSource, setUtmSource] = useState("");
+  const [utmMedium, setUtmMedium] = useState("");
+  const [utmCampaign, setUtmCampaign] = useState("");
   const [utmTerm, setUtmTerm] = useState("");
   const [utmContent, setUtmContent] = useState("");
   const [phone, setPhone] = useState("");
