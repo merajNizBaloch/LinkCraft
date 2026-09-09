@@ -5,7 +5,6 @@ import {
   Check,
   Clipboard,
   Copy,
-  Download,
   ExternalLink,
   Globe2,
   Link2,
@@ -22,14 +21,13 @@ import {
   Zap,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
+import QrDesigner from "@/components/QrDesigner";
 
 type ToolId = "shorten" | "qr" | "clean" | "utm" | "whatsapp" | "codec" | "inspect";
-type QrLevel = "L" | "M" | "Q" | "H";
 
 const tools = [
   { id: "shorten" as const, label: "Shorten", description: "Persistent shareable links", icon: Link2, status: "Live" },
-  { id: "qr" as const, label: "QR Code", description: "Create scannable codes", icon: QrCode },
+  { id: "qr" as const, label: "QR Code", description: "Design branded QR codes", icon: QrCode },
   { id: "clean" as const, label: "Clean URL", description: "Strip tracking parameters", icon: WandSparkles },
   { id: "utm" as const, label: "UTM Builder", description: "Build campaign links", icon: Tags },
   { id: "whatsapp" as const, label: "WhatsApp", description: "Create click-to-chat links", icon: MessageCircle },
@@ -137,8 +135,6 @@ export default function Home() {
   const [message, setMessage] = useState("Hi, I am interested in your services.");
   const [codecValue, setCodecValue] = useState("https://example.com/product?id=12&name=Link Craft");
   const [codecMode, setCodecMode] = useState<"encode" | "decode">("encode");
-  const [qrColor, setQrColor] = useState("#11110f");
-  const [qrLevel, setQrLevel] = useState<QrLevel>("M");
 
   const normalized = useMemo(() => normalizeUrl(url), [url]);
   const cleanedResult = useMemo(() => getCleanUrl(url), [url]);
@@ -226,19 +222,6 @@ export default function Home() {
     selectTool("qr");
   }
 
-  function downloadQr() {
-    const svg = document.getElementById("linkcraft-qr");
-    if (!svg) return;
-    const source = new XMLSerializer().serializeToString(svg);
-    const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
-    const objectUrl = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = objectUrl;
-    anchor.download = "linkcraft-qr.svg";
-    anchor.click();
-    URL.revokeObjectURL(objectUrl);
-  }
-
   return (
     <main className="min-h-screen overflow-hidden">
       <header className="sticky top-0 z-50 border-b border-[#deded8] bg-[#f7f7f4]/88 backdrop-blur-xl">
@@ -264,7 +247,7 @@ export default function Home() {
           <div>
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#ffd0c3] bg-[#fff0eb]/90 px-3 py-1.5 text-xs font-bold text-[#b93617] shadow-sm"><Sparkles size={14} /> Seven link tools in one workspace</div>
             <h1 className="max-w-4xl text-5xl font-black leading-[0.92] tracking-[-0.07em] sm:text-6xl md:text-7xl lg:text-[82px]">Work smarter<br />with <span className="accent-underline text-[#ff5c35]">every link.</span></h1>
-            <p className="mt-7 max-w-2xl text-base leading-7 text-[#5f5f59] md:text-lg">Shorten URLs, generate QR codes, remove trackers, build campaigns and inspect links without jumping between separate websites.</p>
+            <p className="mt-7 max-w-2xl text-base leading-7 text-[#5f5f59] md:text-lg">Shorten URLs, generate branded QR codes, remove trackers, build campaigns and inspect links without jumping between separate websites.</p>
             <div className="mt-8 flex flex-wrap gap-3 text-xs font-bold text-[#5f5f59]">
               <span className="proof-pill"><Zap size={14} /> Fast</span>
               <span className="proof-pill"><ShieldCheck size={14} /> Server secrets stay private</span>
@@ -368,20 +351,7 @@ export default function Home() {
               </div>
             )}
 
-            {active === "qr" && (
-              <div className="grid gap-8 md:grid-cols-[1fr_290px] md:items-start">
-                <div>
-                  <div className="section-kicker">QR Generator</div><h3 className="tool-heading">Turn any link into a polished QR.</h3><p className="tool-copy">Choose a color and error-correction level, then download a scalable SVG.</p>
-                  <div className="mt-7 grid gap-4 sm:grid-cols-2">
-                    <label className="grid gap-2"><span className="field-label">QR color</span><div className="flex min-h-12 items-center gap-3 rounded-xl border border-[#d8d8d2] bg-white px-3"><input type="color" value={qrColor} onChange={(event) => setQrColor(event.target.value)} className="h-7 w-9 cursor-pointer border-0 bg-transparent p-0" /><span className="text-sm font-semibold uppercase">{qrColor}</span></div></label>
-                    <label className="grid gap-2"><span className="field-label">Error correction</span><select value={qrLevel} onChange={(event) => setQrLevel(event.target.value as QrLevel)} className="input-shell"><option value="L">Low · 7%</option><option value="M">Medium · 15%</option><option value="Q">Quartile · 25%</option><option value="H">High · 30%</option></select></label>
-                  </div>
-                  <div className="mt-5 flex flex-wrap gap-2"><button type="button" onClick={downloadQr} disabled={!urlStatus.valid} className="primary-action"><Download size={16} /> Download SVG</button><CopyButton value={urlStatus.valid ? normalized : ""} label="Copy destination" /></div>
-                  <div className="mt-6"><ResultBox label="Destination" value={urlStatus.valid ? normalized : "Add a valid URL above"} /></div>
-                </div>
-                <div className="rounded-[28px] border border-[#deded8] bg-[#f7f7f4] p-4"><div className="grid aspect-square place-items-center rounded-[22px] bg-white p-7 shadow-sm">{urlStatus.valid ? <QRCodeSVG id="linkcraft-qr" value={normalized} size={205} level={qrLevel} marginSize={2} fgColor={qrColor} bgColor="#ffffff" /> : <QrCode size={72} className="text-[#c8c8c2]" />}</div><div className="mt-3 flex items-center justify-between px-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8b8b85]"><span>Live preview</span><span>{qrLevel} level</span></div></div>
-              </div>
-            )}
+            {active === "qr" && <QrDesigner value={urlStatus.valid ? normalized : ""} />}
 
             {active === "clean" && (
               <div>
