@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { RESERVED_CODES } from "@/lib/links";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { readSupabaseError, supabaseAdminFetch } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
 type RouteContext = {
   params: Promise<{ code: string }>;
 };
+
+type ResolveRow = { destination: string };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   const { code } = await context.params;
@@ -17,16 +19,19 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   }
 
   try {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase.rpc("resolve_short_link", { p_code: code });
+    const response = await supabaseAdminFetch("rpc/resolve_short_link", {
+      method: "POST",
+      body: JSON.stringify({ p_code: code }),
+    });
 
-    if (error) {
+    if (!response.ok) {
+      const error = await readSupabaseError(response);
       console.error("LinkCraft redirect error", error);
       return new NextResponse("Unable to resolve this short link.", { status: 500 });
     }
 
-    const row = Array.isArray(data) ? data[0] : data;
-    const destination = row?.destination;
+    const rows = (await response.json()) as ResolveRow[];
+    const destination = rows[0]?.destination;
 
     if (!destination) {
       return new NextResponse("This short link does not exist, is disabled, or has expired.", {
