@@ -1,0 +1,91 @@
+name: Apply Brand SEO UI
+
+on:
+  push:
+    branches:
+      - working
+    paths:
+      - .github/workflows/apply-brand-seo-ui.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: working
+
+      - name: Apply branding and hover updates
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          page_path = Path('app/page.tsx')
+          page = page_path.read_text()
+
+          if 'import Image from "next/image";' not in page:
+              page = page.replace('import { useMemo, useState } from "react";\n', 'import Image from "next/image";\nimport { useMemo, useState } from "react";\n')
+
+          old_brand = '''          <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="flex items-center gap-3 text-left">\n            <div className="logo-mark grid h-10 w-10 place-items-center rounded-xl bg-[#11110f] text-white"><Link2 size={20} /></div>\n            <div>\n              <div className="text-lg font-black tracking-[-0.045em]">LinkCraft</div>\n              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#7a7a74]">by TechCraft</div>\n            </div>\n          </button>'''
+          new_brand = '''          <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="group flex items-center gap-3 text-left" aria-label="LinkCraft home">\n            <div className="logo-mark grid h-10 w-10 place-items-center"><Image src="/linkcraft-mark.svg" alt="" width={40} height={40} priority /></div>\n            <div>\n              <div className="text-lg font-black tracking-[-0.045em]"><span>Link</span><span className="text-[#ff5c35]">Craft</span></div>\n              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#7a7a74]">by TechCraft</div>\n            </div>\n          </button>'''
+          if old_brand not in page:
+              raise SystemExit('Header brand block not found')
+          page = page.replace(old_brand, new_brand)
+
+          browser_line = '            <div className="hidden items-center gap-2 rounded-full border border-[#deded8] bg-white/80 px-4 py-2 text-xs font-semibold text-[#5e5e59] md:flex"><ShieldCheck size={14} /> Browser-first core tools</div>\n'
+          if browser_line not in page:
+              raise SystemExit('Browser-first line not found')
+          page = page.replace(browser_line, '')
+
+          old_cta = '            <a href="/shorten" className="hidden rounded-full bg-[#11110f] px-4 py-2 text-xs font-bold text-white transition hover:-translate-y-0.5 sm:block">Shorten a link</a>'
+          new_cta = '            <a href="/free-qr-code-generator" className="hidden rounded-full border border-[#deded8] bg-white px-4 py-2 text-xs font-bold text-[#11110f] transition accent-button-hover md:block">Free QR</a>\n            <a href="/shorten" className="hidden rounded-full bg-[#11110f] px-4 py-2 text-xs font-bold text-white transition accent-button-hover hover:-translate-y-0.5 sm:block">Shorten a link</a>'
+          if old_cta not in page:
+              raise SystemExit('Header CTA not found')
+          page = page.replace(old_cta, new_cta)
+
+          page = page.replace(
+              'Shorten URLs, generate branded QR codes, remove trackers, build campaigns and inspect links without jumping between separate websites.',
+              'Use LinkCraft as a free QR code generator and link toolkit: shorten URLs, create branded QR codes, remove trackers, build UTM campaigns, create WhatsApp links and inspect URLs in one place.'
+          )
+          page = page.replace('<span key={`${i}-1`}>QR Generator</span>', '<span key={`${i}-1`}>Free QR Code Generator</span>')
+
+          page = page.replace(
+              'className="group flex items-center justify-center gap-2 rounded-xl bg-white px-3 py-3 text-xs font-black text-[#11110f] transition hover:-translate-y-0.5"',
+              'className="group flex items-center justify-center gap-2 rounded-xl bg-white px-3 py-3 text-xs font-black text-[#11110f] transition accent-button-hover hover:-translate-y-0.5"'
+          )
+          page = page.replace(
+              'dark ? "bg-[#11110f] text-white hover:-translate-y-0.5" : "border border-[#d8d8d2] bg-white hover:border-[#11110f]"',
+              'dark ? "bg-[#11110f] text-white accent-button-hover hover:-translate-y-0.5" : "border border-[#d8d8d2] bg-white accent-button-hover"'
+          )
+          page = page.replace(
+              'className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-black text-[#11110f] transition hover:-translate-y-0.5"',
+              'className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-black text-[#11110f] transition accent-button-hover hover:-translate-y-0.5"'
+          )
+
+          old_footer = '<footer className="border-t border-[#deded8] px-5 py-7 md:px-8"><div className="mx-auto flex max-w-7xl flex-col gap-3 text-xs text-[#777772] sm:flex-row sm:items-center sm:justify-between"><span>LinkCraft · Free link utilities by TechCraft</span><span>Built for fast, everyday link work.</span></div></footer>'
+          new_footer = '<footer className="border-t border-[#deded8] px-5 py-7 md:px-8"><div className="mx-auto flex max-w-7xl flex-col gap-4 text-xs text-[#777772] sm:flex-row sm:items-center sm:justify-between"><span className="inline-flex items-center gap-2"><Image src="/linkcraft-mark.svg" alt="" width={24} height={24} /><span><strong className="text-[#11110f]">Link<span className="text-[#ff5c35]">Craft</span></strong> · Free link utilities by TechCraft</span></span><nav className="flex flex-wrap gap-4"><a className="footer-link" href="/free-qr-code-generator">Free QR Generator</a><a className="footer-link" href="/free-link-tools">Free Link Tools</a><a className="footer-link" href="/shorten">URL Shortener</a></nav></div></footer>'
+          if old_footer not in page:
+              raise SystemExit('Footer block not found')
+          page = page.replace(old_footer, new_footer)
+          page_path.write_text(page)
+
+          css_path = Path('app/globals.css')
+          css = css_path.read_text()
+          marker = '/* LinkCraft coral interaction system */'
+          if marker not in css:
+              css += '''\n\n/* LinkCraft coral interaction system */\n.logo-mark {\n  background: transparent !important;\n  border-radius: 0 !important;\n  box-shadow: none !important;\n  transition: transform 180ms ease;\n}\n\nheader button:hover .logo-mark {\n  transform: rotate(-4deg) scale(1.05);\n}\n\n.accent-button-hover:hover:not(:disabled),\n.primary-action:hover:not(:disabled),\n.secondary-action:hover:not(:disabled) {\n  background: var(--accent) !important;\n  border-color: var(--accent) !important;\n  color: white !important;\n  transform: translateY(-2px);\n  box-shadow: 0 12px 28px rgba(255, 92, 53, 0.2);\n}\n\n.mini-action:hover:not(:disabled) {\n  background: var(--accent-soft);\n  border-color: var(--accent);\n  color: var(--accent);\n  transform: translateY(-1px);\n}\n\n.hero-console button:hover:not(:disabled) {\n  background: var(--accent) !important;\n  border-color: var(--accent) !important;\n  color: white !important;\n  box-shadow: 0 10px 24px rgba(255, 92, 53, 0.18);\n}\n\n.tool-nav:hover:not(:disabled) {\n  border-color: var(--accent) !important;\n  box-shadow: 0 12px 26px rgba(255, 92, 53, 0.1);\n}\n\nbutton:not(:disabled) {\n  transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;\n}\n\n.footer-link {\n  font-weight: 800;\n  transition: color 160ms ease, transform 160ms ease;\n}\n\n.footer-link:hover {\n  color: var(--accent);\n  transform: translateY(-1px);\n}\n'''
+          css_path.write_text(css)
+
+          Path('.github/workflows/apply-brand-seo-ui.yml').unlink()
+          PY
+
+      - name: Commit applied changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/page.tsx app/globals.css .github/workflows/apply-brand-seo-ui.yml
+          git commit -m "brand: apply LC identity and coral interactions"
+          git push origin working
