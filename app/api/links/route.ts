@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     for (let attempt = 0; attempt < attempts; attempt += 1) {
       const code = alias || createRandomCode();
       const response = await supabaseAdminFetch(
-        "links?select=code,destination,click_count,expires_at,created_at",
+        "linkcraft_links?select=code,destination,click_count,expires_at,created_at",
         {
           method: "POST",
           headers: { Prefer: "return=representation" },
