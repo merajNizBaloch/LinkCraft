@@ -9,26 +9,61 @@ import {
   QrCode,
   RotateCcw,
   ShieldCheck,
+  Sparkles,
   Trash2,
 } from "lucide-react";
-import { ChangeEvent, useMemo, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type QrLevel = "L" | "M" | "Q" | "H";
+type DotType = "square" | "dots" | "rounded" | "extra-rounded" | "classy" | "classy-rounded";
+type CornerSquareType = "square" | "dot" | "extra-rounded";
+type CornerDotType = "square" | "dot";
+type ExportExtension = "svg" | "png";
+
+type QrRenderer = {
+  append: (container?: HTMLElement) => void;
+  update: (options: Record<string, unknown>) => void;
+  getRawData: (extension?: ExportExtension) => Promise<Blob | null>;
+};
 
 type QrPreset = {
   name: string;
   foreground: string;
+  secondary: string;
   background: string;
+  dotType: DotType;
+  cornerSquareType: CornerSquareType;
+  cornerDotType: CornerDotType;
+  gradient: boolean;
 };
 
 const presets: QrPreset[] = [
-  { name: "Classic", foreground: "#11110f", background: "#ffffff" },
-  { name: "TechCraft", foreground: "#ff5c35", background: "#fff7f4" },
-  { name: "Ocean", foreground: "#004295", background: "#eef6ff" },
-  { name: "Forest", foreground: "#315e2a", background: "#f2f8ef" },
-  { name: "Midnight", foreground: "#f7f7f4", background: "#11110f" },
-  { name: "Rose", foreground: "#9f2448", background: "#fff2f6" },
+  { name: "Classic", foreground: "#11110f", secondary: "#11110f", background: "#ffffff", dotType: "square", cornerSquareType: "square", cornerDotType: "square", gradient: false },
+  { name: "Soft", foreground: "#11110f", secondary: "#11110f", background: "#ffffff", dotType: "rounded", cornerSquareType: "extra-rounded", cornerDotType: "dot", gradient: false },
+  { name: "Dots", foreground: "#004295", secondary: "#002252", background: "#eef6ff", dotType: "dots", cornerSquareType: "dot", cornerDotType: "dot", gradient: true },
+  { name: "TechCraft", foreground: "#ff5c35", secondary: "#11110f", background: "#fff7f4", dotType: "classy-rounded", cornerSquareType: "extra-rounded", cornerDotType: "dot", gradient: true },
+  { name: "Midnight", foreground: "#ffffff", secondary: "#ff8a6d", background: "#11110f", dotType: "extra-rounded", cornerSquareType: "extra-rounded", cornerDotType: "dot", gradient: true },
+  { name: "Editorial", foreground: "#161616", secondary: "#6d6d6d", background: "#f4efe7", dotType: "classy", cornerSquareType: "square", cornerDotType: "square", gradient: true },
+];
+
+const dotTypes: { value: DotType; label: string }[] = [
+  { value: "square", label: "Square" },
+  { value: "rounded", label: "Rounded" },
+  { value: "dots", label: "Dots" },
+  { value: "extra-rounded", label: "Bubble" },
+  { value: "classy", label: "Classy" },
+  { value: "classy-rounded", label: "Classy round" },
+];
+
+const cornerSquareTypes: { value: CornerSquareType; label: string }[] = [
+  { value: "square", label: "Square" },
+  { value: "extra-rounded", label: "Rounded" },
+  { value: "dot", label: "Circle" },
+];
+
+const cornerDotTypes: { value: CornerDotType; label: string }[] = [
+  { value: "square", label: "Square" },
+  { value: "dot", label: "Circle" },
 ];
 
 function hexToRgb(hex: string) {
@@ -59,42 +94,150 @@ function contrastRatio(foreground: string, background: string) {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
+function triggerDownload(blob: Blob, filename: string) {
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  anchor.click();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+
 export default function QrDesigner({ value }: { value: string }) {
+  const previewRef = useRef<HTMLDivElement | null>(null);
+  const qrRef = useRef<QrRenderer | null>(null);
+
+  const [rendererReady, setRendererReady] = useState(false);
   const [foreground, setForeground] = useState("#11110f");
+  const [secondary, setSecondary] = useState("#ff5c35");
   const [background, setBackground] = useState("#ffffff");
   const [transparent, setTransparent] = useState(false);
+  const [gradient, setGradient] = useState(false);
+  const [gradientRotation, setGradientRotation] = useState(45);
   const [level, setLevel] = useState<QrLevel>("M");
-  const [size, setSize] = useState(240);
-  const [margin, setMargin] = useState(4);
+  const [size, setSize] = useState(280);
+  const [margin, setMargin] = useState(16);
+  const [dotType, setDotType] = useState<DotType>("rounded");
+  const [cornerSquareType, setCornerSquareType] = useState<CornerSquareType>("extra-rounded");
+  const [cornerDotType, setCornerDotType] = useState<CornerDotType>("dot");
+  const [cornerColor, setCornerColor] = useState("#11110f");
+  const [cornerDotColor, setCornerDotColor] = useState("#ff5c35");
   const [logo, setLogo] = useState<string | null>(null);
   const [logoName, setLogoName] = useState("");
-  const [logoSize, setLogoSize] = useState(48);
+  const [logoSize, setLogoSize] = useState(0.24);
   const [copied, setCopied] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [renderError, setRenderError] = useState("");
 
-  const effectiveBackground = transparent ? "transparent" : background;
   const contrast = useMemo(
-    () => (transparent ? null : contrastRatio(foreground, background)),
-    [foreground, background, transparent],
+    () => (transparent ? null : Math.min(contrastRatio(foreground, background), gradient ? contrastRatio(secondary, background) : Infinity)),
+    [foreground, secondary, background, transparent, gradient],
   );
   const contrastGood = contrast === null || contrast >= 4.5;
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function createRenderer() {
+      try {
+        const module = await import("qr-code-styling");
+        if (cancelled || !previewRef.current) return;
+
+        previewRef.current.innerHTML = "";
+        const QRCodeStyling = module.default;
+        const instance = new QRCodeStyling({
+          width: size,
+          height: size,
+          type: "svg",
+          data: value || "https://techcraftsolution.com",
+        }) as unknown as QrRenderer;
+        instance.append(previewRef.current);
+        qrRef.current = instance;
+        setRendererReady(true);
+        setRenderError("");
+      } catch {
+        setRenderError("The advanced QR renderer could not load.");
+      }
+    }
+
+    void createRenderer();
+    return () => {
+      cancelled = true;
+      qrRef.current = null;
+    };
+    // Renderer is created once and updated by the effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!rendererReady || !qrRef.current) return;
+
+    const dotsOptions = gradient
+      ? {
+          type: dotType,
+          gradient: {
+            type: "linear",
+            rotation: (gradientRotation * Math.PI) / 180,
+            colorStops: [
+              { offset: 0, color: foreground },
+              { offset: 1, color: secondary },
+            ],
+          },
+        }
+      : { type: dotType, color: foreground };
+
+    qrRef.current.update({
+      width: size,
+      height: size,
+      type: "svg",
+      data: value || "https://techcraftsolution.com",
+      margin,
+      image: logo || undefined,
+      qrOptions: { errorCorrectionLevel: level },
+      dotsOptions,
+      backgroundOptions: { color: transparent ? "transparent" : background },
+      cornersSquareOptions: { type: cornerSquareType, color: cornerColor },
+      cornersDotOptions: { type: cornerDotType, color: cornerDotColor },
+      imageOptions: {
+        hideBackgroundDots: true,
+        imageSize: logoSize,
+        margin: 4,
+        saveAsBlob: true,
+      },
+    });
+  }, [rendererReady, value, size, margin, logo, level, dotType, foreground, secondary, gradient, gradientRotation, transparent, background, cornerSquareType, cornerDotType, cornerColor, cornerDotColor, logoSize]);
+
   function applyPreset(preset: QrPreset) {
     setForeground(preset.foreground);
+    setSecondary(preset.secondary);
     setBackground(preset.background);
+    setDotType(preset.dotType);
+    setCornerSquareType(preset.cornerSquareType);
+    setCornerDotType(preset.cornerDotType);
+    setCornerColor(preset.foreground);
+    setCornerDotColor(preset.secondary);
+    setGradient(preset.gradient);
     setTransparent(false);
   }
 
   function resetDesign() {
     setForeground("#11110f");
+    setSecondary("#ff5c35");
     setBackground("#ffffff");
     setTransparent(false);
+    setGradient(false);
+    setGradientRotation(45);
     setLevel("M");
-    setSize(240);
-    setMargin(4);
+    setSize(280);
+    setMargin(16);
+    setDotType("rounded");
+    setCornerSquareType("extra-rounded");
+    setCornerDotType("dot");
+    setCornerColor("#11110f");
+    setCornerDotColor("#ff5c35");
     setLogo(null);
     setLogoName("");
-    setLogoSize(48);
+    setLogoSize(0.24);
     setUploadError("");
   }
 
@@ -109,7 +252,7 @@ export default function QrDesigner({ value }: { value: string }) {
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      setUploadError("Keep the logo below 2 MB for a lightweight QR export.");
+      setUploadError("Keep the logo below 2 MB.");
       return;
     }
 
@@ -137,84 +280,34 @@ export default function QrDesigner({ value }: { value: string }) {
     }
   }
 
-  function serializedSvg() {
-    const svg = document.getElementById("linkcraft-qr") as SVGSVGElement | null;
-    if (!svg) return null;
-    const clone = svg.cloneNode(true) as SVGSVGElement;
-    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    clone.setAttribute("width", String(size));
-    clone.setAttribute("height", String(size));
-    return new XMLSerializer().serializeToString(clone);
-  }
-
-  function downloadSvg() {
-    const source = serializedSvg();
-    if (!source) return;
-    const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
-    const objectUrl = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = objectUrl;
-    anchor.download = "linkcraft-qr.svg";
-    anchor.click();
-    URL.revokeObjectURL(objectUrl);
-  }
-
-  function downloadPng() {
-    const source = serializedSvg();
-    if (!source) return;
-
-    const svgBlob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
-    const objectUrl = URL.createObjectURL(svgBlob);
-    const image = new Image();
-    image.onload = () => {
-      const exportSize = 1024;
-      const canvas = document.createElement("canvas");
-      canvas.width = exportSize;
-      canvas.height = exportSize;
-      const context = canvas.getContext("2d");
-      if (!context) {
-        URL.revokeObjectURL(objectUrl);
-        return;
+  async function download(extension: ExportExtension) {
+    if (!value || !qrRef.current) return;
+    try {
+      const raw = await qrRef.current.getRawData(extension);
+      if (raw instanceof Blob) {
+        triggerDownload(raw, `linkcraft-qr.${extension}`);
       }
-      context.drawImage(image, 0, 0, exportSize, exportSize);
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        const pngUrl = URL.createObjectURL(blob);
-        const anchor = document.createElement("a");
-        anchor.href = pngUrl;
-        anchor.download = "linkcraft-qr.png";
-        anchor.click();
-        URL.revokeObjectURL(pngUrl);
-      }, "image/png");
-      URL.revokeObjectURL(objectUrl);
-    };
-    image.onerror = () => URL.revokeObjectURL(objectUrl);
-    image.src = objectUrl;
+    } catch {
+      setRenderError(`Could not export the ${extension.toUpperCase()} file.`);
+    }
   }
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1.12fr_.88fr] lg:items-start">
       <div>
         <div className="section-kicker">QR Designer</div>
-        <h3 className="tool-heading">Make the QR match the brand.</h3>
+        <h3 className="tool-heading">Shape every part of the QR.</h3>
         <p className="tool-copy">
-          Customize colors, quiet zone, size and logo placement, then export a sharp SVG or high-resolution PNG.
+          Style modules, finder eyes, inner corner dots, gradients, colors and your center logo while keeping a live scannability check.
         </p>
 
         <div className="mt-7">
-          <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-[#777772]">
-            <Palette size={15} /> Design presets
-          </div>
+          <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-[#777772]"><Palette size={15} /> Design presets</div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {presets.map((preset) => (
-              <button
-                key={preset.name}
-                type="button"
-                onClick={() => applyPreset(preset)}
-                className="group flex items-center gap-3 rounded-xl border border-[#deded8] bg-white p-3 text-left transition hover:-translate-y-0.5 hover:border-[#bcbcb5]"
-              >
+              <button key={preset.name} type="button" onClick={() => applyPreset(preset)} className="group flex items-center gap-3 rounded-xl border border-[#deded8] bg-white p-3 text-left transition hover:-translate-y-0.5 hover:border-[#bcbcb5]">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-black/5" style={{ background: preset.background }}>
-                  <span className="h-4 w-4 rounded-[4px]" style={{ background: preset.foreground }} />
+                  <span className={preset.dotType === "dots" ? "h-4 w-4 rounded-full" : preset.dotType.includes("rounded") ? "h-4 w-4 rounded-[5px]" : "h-4 w-4 rounded-[1px]"} style={{ background: preset.foreground }} />
                 </span>
                 <span className="text-xs font-black">{preset.name}</span>
               </button>
@@ -222,138 +315,79 @@ export default function QrDesigner({ value }: { value: string }) {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-2">
-            <span className="field-label">QR color</span>
-            <div className="flex min-h-12 items-center gap-3 rounded-xl border border-[#d8d8d2] bg-white px-3">
-              <input type="color" value={foreground} onChange={(event) => setForeground(event.target.value)} className="h-7 w-9 cursor-pointer border-0 bg-transparent p-0" />
-              <span className="text-sm font-semibold uppercase">{foreground}</span>
-            </div>
-          </label>
-
-          <label className="grid gap-2">
-            <span className="field-label">Background</span>
-            <div className={`flex min-h-12 items-center gap-3 rounded-xl border border-[#d8d8d2] px-3 ${transparent ? "bg-[linear-gradient(45deg,#eee_25%,transparent_25%,transparent_75%,#eee_75%),linear-gradient(45deg,#eee_25%,white_25%,white_75%,#eee_75%)] bg-[length:12px_12px] bg-[position:0_0,6px_6px]" : "bg-white"}`}>
-              <input type="color" value={background} disabled={transparent} onChange={(event) => setBackground(event.target.value)} className="h-7 w-9 cursor-pointer border-0 bg-transparent p-0 disabled:opacity-35" />
-              <span className="text-sm font-semibold uppercase">{transparent ? "Transparent" : background}</span>
-            </div>
-          </label>
+        <div className="mt-7 rounded-[22px] border border-[#deded8] bg-[#fafaf8] p-4 md:p-5">
+          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-[#777772]"><Sparkles size={15} /> Module style</div>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {dotTypes.map((option) => (
+              <button key={option.value} type="button" onClick={() => setDotType(option.value)} className={`rounded-xl border px-3 py-3 text-xs font-black transition ${dotType === option.value ? "border-[#11110f] bg-[#11110f] text-white" : "border-[#deded8] bg-white hover:border-[#bcbcb5]"}`}>{option.label}</button>
+            ))}
+          </div>
         </div>
 
-        <label className="mt-3 flex items-center gap-3 rounded-xl border border-[#deded8] bg-[#fafaf8] px-4 py-3 text-sm font-bold">
-          <input type="checkbox" checked={transparent} onChange={(event) => setTransparent(event.target.checked)} className="h-4 w-4 accent-[#11110f]" />
-          Transparent background
-        </label>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-2"><span className="field-label">QR color</span><div className="flex min-h-12 items-center gap-3 rounded-xl border border-[#d8d8d2] bg-white px-3"><input type="color" value={foreground} onChange={(event) => setForeground(event.target.value)} className="h-7 w-9 cursor-pointer border-0 bg-transparent p-0" /><span className="text-sm font-semibold uppercase">{foreground}</span></div></label>
+          <label className="grid gap-2"><span className="field-label">Background</span><div className="flex min-h-12 items-center gap-3 rounded-xl border border-[#d8d8d2] bg-white px-3"><input type="color" value={background} disabled={transparent} onChange={(event) => setBackground(event.target.value)} className="h-7 w-9 cursor-pointer border-0 bg-transparent p-0 disabled:opacity-35" /><span className="text-sm font-semibold uppercase">{transparent ? "Transparent" : background}</span></div></label>
+        </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          <label className="grid gap-2">
-            <span className="field-label">Error correction</span>
-            <select value={level} onChange={(event) => setLevel(event.target.value as QrLevel)} className="input-shell">
-              <option value="L">Low · 7%</option>
-              <option value="M">Medium · 15%</option>
-              <option value="Q">Quartile · 25%</option>
-              <option value="H">High · 30%</option>
-            </select>
-          </label>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="flex items-center gap-3 rounded-xl border border-[#deded8] bg-[#fafaf8] px-4 py-3 text-sm font-bold"><input type="checkbox" checked={gradient} onChange={(event) => setGradient(event.target.checked)} className="h-4 w-4 accent-[#11110f]" /> Gradient modules</label>
+          <label className="flex items-center gap-3 rounded-xl border border-[#deded8] bg-[#fafaf8] px-4 py-3 text-sm font-bold"><input type="checkbox" checked={transparent} onChange={(event) => setTransparent(event.target.checked)} className="h-4 w-4 accent-[#11110f]" /> Transparent background</label>
+        </div>
 
-          <label className="grid gap-2">
-            <span className="field-label">QR size</span>
-            <select value={size} onChange={(event) => setSize(Number(event.target.value))} className="input-shell">
-              <option value="180">180 px</option>
-              <option value="220">220 px</option>
-              <option value="240">240 px</option>
-              <option value="280">280 px</option>
-              <option value="320">320 px</option>
-            </select>
-          </label>
+        {gradient && (
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2"><span className="field-label">Gradient end</span><div className="flex min-h-12 items-center gap-3 rounded-xl border border-[#d8d8d2] bg-white px-3"><input type="color" value={secondary} onChange={(event) => setSecondary(event.target.value)} className="h-7 w-9 cursor-pointer border-0 bg-transparent p-0" /><span className="text-sm font-semibold uppercase">{secondary}</span></div></label>
+            <label className="grid gap-2"><span className="field-label">Gradient angle · {gradientRotation}°</span><input type="range" min="0" max="360" step="15" value={gradientRotation} onChange={(event) => setGradientRotation(Number(event.target.value))} className="mt-3 w-full accent-[#11110f]" /></label>
+          </div>
+        )}
 
-          <label className="grid gap-2">
-            <span className="field-label">Quiet zone</span>
-            <select value={margin} onChange={(event) => setMargin(Number(event.target.value))} className="input-shell">
-              <option value="2">Compact · 2</option>
-              <option value="4">Standard · 4</option>
-              <option value="6">Roomy · 6</option>
-              <option value="8">Wide · 8</option>
-            </select>
-          </label>
+        <div className="mt-7 rounded-[22px] border border-[#deded8] bg-[#fafaf8] p-4 md:p-5">
+          <div className="text-xs font-black uppercase tracking-[0.14em] text-[#777772]">Finder eyes</div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2"><span className="field-label">Outer eye shape</span><select value={cornerSquareType} onChange={(event) => setCornerSquareType(event.target.value as CornerSquareType)} className="input-shell">{cornerSquareTypes.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+            <label className="grid gap-2"><span className="field-label">Inner eye shape</span><select value={cornerDotType} onChange={(event) => setCornerDotType(event.target.value as CornerDotType)} className="input-shell">{cornerDotTypes.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+            <label className="grid gap-2"><span className="field-label">Outer eye color</span><div className="flex min-h-12 items-center gap-3 rounded-xl border border-[#d8d8d2] bg-white px-3"><input type="color" value={cornerColor} onChange={(event) => setCornerColor(event.target.value)} className="h-7 w-9 cursor-pointer border-0 bg-transparent p-0" /><span className="text-sm font-semibold uppercase">{cornerColor}</span></div></label>
+            <label className="grid gap-2"><span className="field-label">Inner eye color</span><div className="flex min-h-12 items-center gap-3 rounded-xl border border-[#d8d8d2] bg-white px-3"><input type="color" value={cornerDotColor} onChange={(event) => setCornerDotColor(event.target.value)} className="h-7 w-9 cursor-pointer border-0 bg-transparent p-0" /><span className="text-sm font-semibold uppercase">{cornerDotColor}</span></div></label>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          <label className="grid gap-2"><span className="field-label">Error correction</span><select value={level} onChange={(event) => setLevel(event.target.value as QrLevel)} className="input-shell"><option value="L">Low · 7%</option><option value="M">Medium · 15%</option><option value="Q">Quartile · 25%</option><option value="H">High · 30%</option></select></label>
+          <label className="grid gap-2"><span className="field-label">Preview size</span><select value={size} onChange={(event) => setSize(Number(event.target.value))} className="input-shell"><option value="220">220 px</option><option value="280">280 px</option><option value="320">320 px</option><option value="360">360 px</option></select></label>
+          <label className="grid gap-2"><span className="field-label">Quiet zone</span><select value={margin} onChange={(event) => setMargin(Number(event.target.value))} className="input-shell"><option value="8">Compact</option><option value="16">Standard</option><option value="24">Roomy</option><option value="32">Wide</option></select></label>
         </div>
 
         <div className="mt-6 rounded-[22px] border border-[#deded8] bg-[#fafaf8] p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="field-label">Center logo</div>
-              <p className="mt-1 text-xs leading-5 text-[#777772]">PNG, JPG, WebP or SVG · max 2 MB. Adding a logo automatically switches correction to High.</p>
-            </div>
-            <label className="secondary-action cursor-pointer">
-              <ImagePlus size={16} /> {logo ? "Replace logo" : "Add logo"}
-              <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={handleLogo} className="hidden" />
-            </label>
+            <div><div className="field-label">Center logo</div><p className="mt-1 text-xs leading-5 text-[#777772]">PNG, JPG, WebP or SVG · max 2 MB. Logo mode automatically uses High correction.</p></div>
+            <label className="secondary-action cursor-pointer"><ImagePlus size={16} /> {logo ? "Replace logo" : "Add logo"}<input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={handleLogo} className="hidden" /></label>
           </div>
-
-          {logo && (
-            <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
-              <label className="grid gap-2">
-                <span className="field-label">Logo size · {logoSize}px</span>
-                <input type="range" min="28" max="72" step="2" value={logoSize} onChange={(event) => setLogoSize(Number(event.target.value))} className="w-full accent-[#11110f]" />
-              </label>
-              <button type="button" onClick={() => { setLogo(null); setLogoName(""); }} className="secondary-action">
-                <Trash2 size={15} /> Remove
-              </button>
-              <div className="sm:col-span-2 truncate text-[11px] font-semibold text-[#888882]">{logoName}</div>
-            </div>
-          )}
-
+          {logo && <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end"><label className="grid gap-2"><span className="field-label">Logo coverage · {Math.round(logoSize * 100)}%</span><input type="range" min="0.14" max="0.34" step="0.02" value={logoSize} onChange={(event) => setLogoSize(Number(event.target.value))} className="w-full accent-[#11110f]" /></label><button type="button" onClick={() => { setLogo(null); setLogoName(""); }} className="secondary-action"><Trash2 size={15} /> Remove</button><div className="sm:col-span-2 truncate text-[11px] font-semibold text-[#888882]">{logoName}</div></div>}
           {uploadError && <div className="mt-3 text-xs font-semibold text-[#a53419]">{uploadError}</div>}
         </div>
 
         <div className={`mt-5 flex items-start gap-2 rounded-2xl border p-4 text-xs leading-5 ${contrastGood ? "border-[#c8d9c3] bg-[#f5faf3] text-[#52704c]" : "border-[#ffd0c3] bg-[#fff0eb] text-[#a53419]"}`}>
           <ShieldCheck size={15} className="mt-0.5 shrink-0" />
-          {transparent
-            ? "Transparent QR codes depend on the surface behind them. Keep strong light/dark contrast when placing the exported code."
-            : contrastGood
-              ? `Strong color contrast (${contrast?.toFixed(1)}:1). Standard 4-module quiet zones are safest for scanning.`
-              : `Low color contrast (${contrast?.toFixed(1)}:1). Use a darker QR color or lighter background for reliable scanning.`}
+          {transparent ? "Transparent backgrounds can reduce scan reliability depending on where the QR is placed. Test it on the final surface." : contrastGood ? `Strong module/background contrast (${contrast?.toFixed(1)}:1). Keep enough quiet space around the exported code.` : `Low contrast (${contrast?.toFixed(1)}:1). Increase the difference between the QR modules and background before publishing.`}
         </div>
 
+        {renderError && <div className="mt-4 rounded-xl border border-[#ffd0c3] bg-[#fff0eb] p-3 text-xs font-semibold text-[#a53419]">{renderError}</div>}
+
         <div className="mt-5 flex flex-wrap gap-2">
-          <button type="button" onClick={downloadSvg} disabled={!value} className="primary-action"><Download size={16} /> SVG</button>
-          <button type="button" onClick={downloadPng} disabled={!value} className="secondary-action"><Download size={16} /> PNG · 1024px</button>
+          <button type="button" onClick={() => void download("svg")} disabled={!value || !rendererReady} className="primary-action"><Download size={16} /> SVG</button>
+          <button type="button" onClick={() => void download("png")} disabled={!value || !rendererReady} className="secondary-action"><Download size={16} /> PNG</button>
           <button type="button" onClick={copyDestination} disabled={!value} className="secondary-action">{copied ? <Check size={16} /> : <Copy size={16} />} {copied ? "Copied" : "Copy link"}</button>
-          <button type="button" onClick={resetDesign} className="secondary-action"><RotateCcw size={16} /> Reset design</button>
+          <button type="button" onClick={resetDesign} className="secondary-action"><RotateCcw size={16} /> Reset</button>
         </div>
       </div>
 
       <div className="lg:sticky lg:top-24">
         <div className="rounded-[30px] border border-[#deded8] bg-[#f7f7f4] p-4 shadow-[0_18px_45px_rgba(17,17,15,.06)]">
-          <div className="grid min-h-[320px] place-items-center rounded-[24px] bg-white p-6 shadow-sm">
-            {value ? (
-              <QRCodeSVG
-                id="linkcraft-qr"
-                value={value}
-                size={size}
-                level={level}
-                marginSize={margin}
-                fgColor={foreground}
-                bgColor={effectiveBackground}
-                title="LinkCraft QR code"
-                imageSettings={logo ? { src: logo, width: logoSize, height: logoSize, excavate: true } : undefined}
-                className="h-auto max-w-full"
-              />
-            ) : (
-              <div className="text-center">
-                <QrCode size={74} className="mx-auto text-[#c8c8c2]" />
-                <div className="mt-4 text-sm font-black">Add a valid URL</div>
-                <p className="mt-1 text-xs text-[#888882]">Your customized QR preview will appear here.</p>
-              </div>
-            )}
+          <div className="grid min-h-[360px] place-items-center overflow-hidden rounded-[24px] bg-white p-5 shadow-sm">
+            {value ? <div ref={previewRef} className="grid max-w-full place-items-center [&>svg]:h-auto [&>svg]:max-w-full" /> : <div className="text-center"><QrCode size={74} className="mx-auto text-[#c8c8c2]" /><div className="mt-4 text-sm font-black">Add a valid URL</div><p className="mt-1 text-xs text-[#888882]">Your styled QR preview will appear here.</p></div>}
           </div>
-          <div className="mt-4 flex items-center justify-between gap-3 px-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8b8b85]">
-            <span>Live preview</span>
-            <span>{level} · {margin} margin</span>
-          </div>
-          <div className="mt-3 break-all rounded-xl border border-[#deded8] bg-white px-3 py-2.5 text-[11px] font-semibold leading-5 text-[#696965]">
-            {value || "No destination selected"}
-          </div>
+          <div className="mt-4 flex items-center justify-between gap-3 px-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8b8b85]"><span>Live preview</span><span>{dotTypes.find((item) => item.value === dotType)?.label} · {level}</span></div>
+          <div className="mt-3 break-all rounded-xl border border-[#deded8] bg-white px-3 py-2.5 text-[11px] font-semibold leading-5 text-[#696965]">{value || "No destination selected"}</div>
         </div>
       </div>
     </div>
