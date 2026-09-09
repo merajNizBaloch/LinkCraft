@@ -20,6 +20,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import QrDesigner from "@/components/QrDesigner";
 
@@ -96,7 +97,7 @@ function CopyButton({ value, dark = false, label = "Copy" }: { value: string; da
       onClick={copy}
       disabled={!value}
       className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40 ${
-        dark ? "bg-[#11110f] text-white hover:-translate-y-0.5" : "border border-[#d8d8d2] bg-white hover:border-[#11110f]"
+        dark ? "bg-[#11110f] text-white accent-button-hover hover:-translate-y-0.5" : "border border-[#d8d8d2] bg-white accent-button-hover"
       }`}
     >
       {copied ? <Check size={16} /> : <Copy size={16} />}
@@ -226,16 +227,16 @@ export default function Home() {
     <main className="min-h-screen overflow-hidden">
       <header className="sticky top-0 z-50 border-b border-[#deded8] bg-[#f7f7f4]/88 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5 md:px-8">
-          <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="flex items-center gap-3 text-left">
-            <div className="logo-mark grid h-10 w-10 place-items-center rounded-xl bg-[#11110f] text-white"><Link2 size={20} /></div>
+          <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="group flex items-center gap-3 text-left" aria-label="LinkCraft home">
+            <div className="logo-mark grid h-10 w-10 place-items-center"><Image src="/linkcraft-mark.svg" alt="" width={40} height={40} priority /></div>
             <div>
-              <div className="text-lg font-black tracking-[-0.045em]">LinkCraft</div>
+              <div className="text-lg font-black tracking-[-0.045em]"><span>Link</span><span className="text-[#ff5c35]">Craft</span></div>
               <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#7a7a74]">by TechCraft</div>
             </div>
           </button>
           <div className="flex items-center gap-2">
-            <div className="hidden items-center gap-2 rounded-full border border-[#deded8] bg-white/80 px-4 py-2 text-xs font-semibold text-[#5e5e59] md:flex"><ShieldCheck size={14} /> Browser-first core tools</div>
-            <a href="/shorten" className="hidden rounded-full bg-[#11110f] px-4 py-2 text-xs font-bold text-white transition hover:-translate-y-0.5 sm:block">Shorten a link</a>
+            <a href="/free-qr-code-generator" className="hidden rounded-full border border-[#deded8] bg-white px-4 py-2 text-xs font-bold text-[#11110f] transition accent-button-hover md:block">Free QR</a>
+            <a href="/shorten" className="hidden rounded-full bg-[#11110f] px-4 py-2 text-xs font-bold text-white transition accent-button-hover hover:-translate-y-0.5 sm:block">Shorten a link</a>
           </div>
         </div>
       </header>
@@ -247,7 +248,7 @@ export default function Home() {
           <div>
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#ffd0c3] bg-[#fff0eb]/90 px-3 py-1.5 text-xs font-bold text-[#b93617] shadow-sm"><Sparkles size={14} /> Seven link tools in one workspace</div>
             <h1 className="max-w-4xl text-5xl font-black leading-[0.92] tracking-[-0.07em] sm:text-6xl md:text-7xl lg:text-[82px]">Work smarter<br />with <span className="accent-underline text-[#ff5c35]">every link.</span></h1>
-            <p className="mt-7 max-w-2xl text-base leading-7 text-[#5f5f59] md:text-lg">Shorten URLs, generate branded QR codes, remove trackers, build campaigns and inspect links without jumping between separate websites.</p>
+            <p className="mt-7 max-w-2xl text-base leading-7 text-[#5f5f59] md:text-lg">Use LinkCraft as a free QR code generator and link toolkit: shorten URLs, create branded QR codes, remove trackers, build UTM campaigns, create WhatsApp links and inspect URLs in one place.</p>
             <div className="mt-8 flex flex-wrap gap-3 text-xs font-bold text-[#5f5f59]">
               <span className="proof-pill"><Zap size={14} /> Fast</span>
               <span className="proof-pill"><ShieldCheck size={14} /> Server secrets stay private</span>
@@ -275,7 +276,7 @@ export default function Home() {
                   ["inspect", "Inspect", ScanSearch],
                 ].map(([id, label, Icon]) => {
                   const ToolIcon = Icon as typeof QrCode;
-                  return <button key={id as string} type="button" onClick={() => selectTool(id as ToolId)} className="group flex items-center justify-center gap-2 rounded-xl bg-white px-3 py-3 text-xs font-black text-[#11110f] transition hover:-translate-y-0.5"><ToolIcon size={15} />{label as string}</button>;
+                  return <button key={id as string} type="button" onClick={() => selectTool(id as ToolId)} className="group flex items-center justify-center gap-2 rounded-xl bg-white px-3 py-3 text-xs font-black text-[#11110f] transition accent-button-hover hover:-translate-y-0.5"><ToolIcon size={15} />{label as string}</button>;
                 })}
               </div>
               <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4 text-[11px] text-white/40"><span className="truncate pr-4">{urlStatus.host || "Core transformations stay in your browser"}</span><span className="shrink-0 font-bold text-white/60">LINKCRAFT / 01</span></div>
@@ -288,7 +289,7 @@ export default function Home() {
         <div className="marquee-track flex w-max gap-12 whitespace-nowrap text-[10px] font-black uppercase tracking-[0.24em]">
           {Array.from({ length: 3 }).flatMap((_, i) => [
             <span key={`${i}-0`}>URL Shortener</span>,
-            <span key={`${i}-1`}>QR Generator</span>,
+            <span key={`${i}-1`}>Free QR Code Generator</span>,
             <span key={`${i}-2`}>URL Cleaner</span>,
             <span key={`${i}-3`}>UTM Builder</span>,
             <span key={`${i}-4`}>WhatsApp Links</span>,
@@ -412,10 +413,10 @@ export default function Home() {
       </section>
 
       <section className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-20">
-        <div className="overflow-hidden rounded-[30px] bg-[#11110f] p-7 text-white md:p-10"><div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-end"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ff8a6d]">LinkCraft</div><h2 className="mt-3 max-w-2xl text-3xl font-black tracking-[-0.05em] md:text-4xl">Small link tasks should not need seven different websites.</h2><p className="mt-4 max-w-xl text-sm leading-6 text-white/50">Keep shortening, QR creation, cleanup and campaign utilities in one coherent workspace.</p></div><a href="/shorten" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-black text-[#11110f] transition hover:-translate-y-0.5">Create short link <ArrowRight size={16} /></a></div></div>
+        <div className="overflow-hidden rounded-[30px] bg-[#11110f] p-7 text-white md:p-10"><div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-end"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ff8a6d]">LinkCraft</div><h2 className="mt-3 max-w-2xl text-3xl font-black tracking-[-0.05em] md:text-4xl">Small link tasks should not need seven different websites.</h2><p className="mt-4 max-w-xl text-sm leading-6 text-white/50">Keep shortening, QR creation, cleanup and campaign utilities in one coherent workspace.</p></div><a href="/shorten" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-black text-[#11110f] transition accent-button-hover hover:-translate-y-0.5">Create short link <ArrowRight size={16} /></a></div></div>
       </section>
 
-      <footer className="border-t border-[#deded8] px-5 py-7 md:px-8"><div className="mx-auto flex max-w-7xl flex-col gap-3 text-xs text-[#777772] sm:flex-row sm:items-center sm:justify-between"><span>LinkCraft · Free link utilities by TechCraft</span><span>Built for fast, everyday link work.</span></div></footer>
+      <footer className="border-t border-[#deded8] px-5 py-7 md:px-8"><div className="mx-auto flex max-w-7xl flex-col gap-4 text-xs text-[#777772] sm:flex-row sm:items-center sm:justify-between"><span className="inline-flex items-center gap-2"><Image src="/linkcraft-mark.svg" alt="" width={24} height={24} /><span><strong className="text-[#11110f]">Link<span className="text-[#ff5c35]">Craft</span></strong> · Free link utilities by TechCraft</span></span><nav className="flex flex-wrap gap-4"><a className="footer-link" href="/free-qr-code-generator">Free QR Generator</a><a className="footer-link" href="/free-link-tools">Free Link Tools</a><a className="footer-link" href="/shorten">URL Shortener</a></nav></div></footer>
     </main>
   );
 }

@@ -321,3 +321,59 @@ input[type="color"]::-moz-color-swatch {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* LinkCraft coral interaction system */
+.logo-mark {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transition: transform 180ms ease;
+}
+
+header button:hover .logo-mark {
+  transform: rotate(-4deg) scale(1.05);
+}
+
+.accent-button-hover:hover:not(:disabled),
+.primary-action:hover:not(:disabled),
+.secondary-action:hover:not(:disabled) {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: white !important;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(255, 92, 53, 0.2);
+}
+
+.mini-action:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.hero-console button:hover:not(:disabled) {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: white !important;
+  box-shadow: 0 10px 24px rgba(255, 92, 53, 0.18);
+}
+
+.tool-nav:hover:not(:disabled) {
+  border-color: var(--accent) !important;
+  box-shadow: 0 12px 26px rgba(255, 92, 53, 0.1);
+}
+
+button:not(:disabled) {
+  transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.footer-link {
+  font-weight: 800;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.footer-link:hover {
+  color: var(--accent);
+  transform: translateY(-1px);
+}
