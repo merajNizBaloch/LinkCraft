@@ -26,42 +26,48 @@ The browser never receives a Supabase secret or a database write credential.
 
 1. `POST /api/links` validates the destination, optional alias and expiration.
 2. The Next.js server writes the link through Supabase's Data REST API using `SUPABASE_SECRET_KEY`.
-3. `/{code}` calls the server-only `resolve_short_link` RPC.
+3. `/{code}` calls the server-only `linkcraft_resolve_short_link` RPC.
 4. The RPC atomically increments `click_count` and returns the active, non-expired destination.
 5. LinkCraft sends an HTTP redirect to that destination.
 
-RLS is enabled on the `links` table and no `anon` or `authenticated` policies are created. The table and redirect RPC are granted only to Supabase's trusted `service_role` used by the server-side secret key.
+LinkCraft shares the existing Realstate-OS Supabase project but remains isolated through prefixed database objects. RLS is enabled on `public.linkcraft_links`, public roles are explicitly denied, and the table/RPC are available only to the trusted `service_role` used by the server-side secret key.
 
 ## Supabase setup
 
-Create a dedicated Supabase project for LinkCraft, then run:
+LinkCraft currently uses the Realstate-OS Supabase project:
+
+`https://sewnndspsnafutgfdhfy.supabase.co`
+
+The required schema has already been applied to that project. The checked-in reference remains at:
 
 `supabase/linkcraft-setup.sql`
 
-The schema creates:
+It creates only LinkCraft-specific objects:
 
-- `public.links`
+- `public.linkcraft_links`
 - unique short codes
 - optional custom aliases
 - expiration support
 - active/disabled state
 - click count and last-click timestamp
-- the atomic `resolve_short_link(text)` RPC
-- RLS and explicit server-role grants
+- `public.linkcraft_resolve_short_link(text)`
+- RLS, explicit public deny policy, and server-role grants
+
+No existing Realstate-OS application tables are modified by LinkCraft.
 
 ## Environment variables
 
 Copy `.env.example` to `.env.local` and configure:
 
 ```bash
-SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_URL=https://sewnndspsnafutgfdhfy.supabase.co
 SUPABASE_SECRET_KEY=sb_secret_...
 LINKCRAFT_PUBLIC_URL=http://localhost:3000
 ```
 
 For production, set `LINKCRAFT_PUBLIC_URL` to the final LinkCraft domain, for example `https://linkcraft.techcraftsolution.com`.
 
-Never expose `SUPABASE_SECRET_KEY` through a `NEXT_PUBLIC_` variable.
+Never expose `SUPABASE_SECRET_KEY` through a `NEXT_PUBLIC_` variable or commit a real secret to GitHub.
 
 ## Development
 
