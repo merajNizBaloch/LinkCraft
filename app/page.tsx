@@ -127,14 +127,14 @@ function ResultBox({ label, value, positive = false }: { label: string; value: s
 export default function Home() {
   const [active, setActive] = useState<ToolId>("shorten");
   const [url, setUrl] = useState("");
-  const [utmSource, setUtmSource] = useState("instagram");
-  const [utmMedium, setUtmMedium] = useState("social");
-  const [utmCampaign, setUtmCampaign] = useState("launch");
+  const [utmSource, setUtmSource] = useState("");
+  const [utmMedium, setUtmMedium] = useState("");
+  const [utmCampaign, setUtmCampaign] = useState("");
   const [utmTerm, setUtmTerm] = useState("");
   const [utmContent, setUtmContent] = useState("");
-  const [phone, setPhone] = useState("923336077281");
-  const [message, setMessage] = useState("Hi, I am interested in your services.");
-  const [codecValue, setCodecValue] = useState("https://example.com/product?id=12&name=Link Craft");
+  const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState("");
+  const [codecValue, setCodecValue] = useState("");
   const [codecMode, setCodecMode] = useState<"encode" | "decode">("encode");
 
   const normalized = useMemo(() => normalizeUrl(url), [url]);
@@ -367,7 +367,7 @@ export default function Home() {
               <div>
                 <div className="section-kicker">UTM Builder</div><h3 className="tool-heading">Build campaign links without formatting mistakes.</h3><p className="tool-copy">Source, medium and campaign are the core fields. Term and content are optional.</p>
                 <div className="mt-7 grid gap-4 md:grid-cols-3"><Field label="Source" value={utmSource} onChange={setUtmSource} placeholder="instagram" /><Field label="Medium" value={utmMedium} onChange={setUtmMedium} placeholder="social" /><Field label="Campaign" value={utmCampaign} onChange={setUtmCampaign} placeholder="launch" /></div>
-                <div className="mt-4 grid gap-4 md:grid-cols-2"><Field label="Term · optional" value={utmTerm} onChange={setUtmTerm} placeholder="school-software" /><Field label="Content · optional" value={utmContent} onChange={setUtmContent} placeholder="hero-button" /></div>
+                <div className="mt-4 grid gap-4 md:grid-cols-2"><Field label="Term · optional" value={utmTerm} onChange={setUtmTerm} placeholder="campaign-term" /><Field label="Content · optional" value={utmContent} onChange={setUtmContent} placeholder="button-variant" /></div>
                 <div className="mt-5"><ResultBox label="Campaign URL" value={utmUrl || "Add a valid URL above"} /></div>
                 <div className="mt-4 flex flex-wrap gap-2"><CopyButton value={utmUrl === "Invalid URL" ? "" : utmUrl} dark /><button type="button" onClick={() => sendToQr(utmUrl)} disabled={!utmUrl || utmUrl === "Invalid URL"} className="secondary-action"><QrCode size={16} /> Make QR</button><button type="button" onClick={() => utmUrl !== "Invalid URL" && setUrl(utmUrl)} disabled={!utmUrl || utmUrl === "Invalid URL"} className="secondary-action"><ArrowRight size={16} /> Use this link</button></div>
               </div>
@@ -376,7 +376,7 @@ export default function Home() {
             {active === "whatsapp" && (
               <div>
                 <div className="section-kicker">WhatsApp Link</div><h3 className="tool-heading">Create a clean click-to-chat link.</h3><p className="tool-copy">Use the full international number without a plus sign, then optionally prefill the opening message.</p>
-                <div className="mt-7 grid gap-4"><Field label="Phone with country code" value={phone} onChange={setPhone} placeholder="923001234567" /><label className="grid gap-2"><span className="field-label">Prefilled message</span><textarea rows={4} value={message} onChange={(event) => setMessage(event.target.value)} className="input-shell resize-y py-3" placeholder="Hi, I would like to know more..." /></label></div>
+                <div className="mt-7 grid gap-4"><Field label="Phone with country code" value={phone} onChange={setPhone} placeholder="Country code + phone number" /><label className="grid gap-2"><span className="field-label">Prefilled message</span><textarea rows={4} value={message} onChange={(event) => setMessage(event.target.value)} className="input-shell resize-y py-3" placeholder="Type an optional message..." /></label></div>
                 <div className="mt-5"><ResultBox label="Generated WhatsApp link" value={whatsappUrl} positive /></div>
                 <div className="mt-4 flex flex-wrap gap-2"><CopyButton value={whatsappUrl} dark />{whatsappUrl && <a href={whatsappUrl} target="_blank" rel="noreferrer" className="secondary-action"><ExternalLink size={16} /> Open WhatsApp</a>}<button type="button" onClick={() => sendToQr(whatsappUrl)} disabled={!whatsappUrl} className="secondary-action"><QrCode size={16} /> Make QR</button></div>
               </div>
