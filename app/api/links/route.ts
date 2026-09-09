@@ -28,6 +28,21 @@ function publicOrigin(request: NextRequest) {
   return (process.env.LINKCRAFT_PUBLIC_URL || request.nextUrl.origin).replace(/\/$/, "");
 }
 
+function isLinkCraftHost(request: NextRequest, destination: URL) {
+  const ownHosts = new Set([request.nextUrl.host]);
+  const configuredOrigin = process.env.LINKCRAFT_PUBLIC_URL;
+
+  if (configuredOrigin) {
+    try {
+      ownHosts.add(new URL(configuredOrigin).host);
+    } catch {
+      // Invalid deployment configuration is handled by the fallback request origin.
+    }
+  }
+
+  return ownHosts.has(destination.host);
+}
+
 export async function POST(request: NextRequest) {
   let body: CreateLinkBody;
 
@@ -47,9 +62,9 @@ export async function POST(request: NextRequest) {
     const expiresAt = getExpiryDate(body.expiresInDays);
 
     const destinationUrl = new URL(destination);
-    if (destinationUrl.host === request.nextUrl.host) {
+    if (isLinkCraftHost(request, destinationUrl)) {
       return NextResponse.json(
-        { error: "LinkCraft links cannot redirect back to the same LinkCraft host." },
+        { error: "LinkCraft links cannot redirect back to a LinkCraft host." },
         { status: 400 },
       );
     }
