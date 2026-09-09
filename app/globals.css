@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f7f4;
+  --foreground: #11110f;
+  --accent: #ff5c35;
+  --accent-soft: #fff0eb;
+  --line: #deded8;
+  --muted: #696965;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 92, 53, 0.08), transparent 30rem),
+    var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: var(--foreground);
+  color: white;
+}
+
+.link-grid {
+  background-image:
+    linear-gradient(rgba(17, 17, 15, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17, 17, 15, 0.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.marquee-track {
+  animation: drift 22s linear infinite;
+}
+
+@keyframes drift {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.tool-card {
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.tool-card:hover {
+  transform: translateY(-3px);
+  border-color: #bdbdb5;
+  box-shadow: 0 18px 45px rgba(17, 17, 15, 0.06);
+}
+
+button, input, textarea {
+  font: inherit;
+}
