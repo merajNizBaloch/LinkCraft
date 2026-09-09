@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   },
   description,
   applicationName: "LinkCraft",
-  authors: [{ name: "TechCraft", url: "https://techcraftsolution.com" }],
+  authors: [{ name: "TechCraft" }],
   creator: "TechCraft",
   publisher: "TechCraft",
   category: "Utilities",
@@ -99,7 +99,6 @@ const structuredData = [
     publisher: {
       "@type": "Organization",
       name: "TechCraft",
-      url: "https://techcraftsolution.com",
     },
   },
   {
@@ -129,7 +128,6 @@ const structuredData = [
     publisher: {
       "@type": "Organization",
       name: "TechCraft",
-      url: "https://techcraftsolution.com",
     },
   },
 ];
