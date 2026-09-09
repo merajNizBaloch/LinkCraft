@@ -126,7 +126,7 @@ function ResultBox({ label, value, positive = false }: { label: string; value: s
 
 export default function Home() {
   const [active, setActive] = useState<ToolId>("shorten");
-  const [url, setUrl] = useState("https://techcraftsolution.com/?utm_source=instagram&utm_campaign=launch");
+  const [url, setUrl] = useState("");
   const [utmSource, setUtmSource] = useState("instagram");
   const [utmMedium, setUtmMedium] = useState("social");
   const [utmCampaign, setUtmCampaign] = useState("launch");
@@ -264,7 +264,7 @@ export default function Home() {
               </div>
               <div className="mt-7 flex items-center gap-2 border-b border-white/20 pb-3">
                 <Link2 size={18} className="shrink-0 text-white/35" />
-                <input value={url} onChange={(event) => setUrl(event.target.value)} className="min-w-0 flex-1 bg-transparent py-2 text-base outline-none placeholder:text-white/25 md:text-lg" placeholder="https://example.com" aria-label="URL" />
+                <input value={url} onChange={(event) => setUrl(event.target.value)} className="min-w-0 flex-1 bg-transparent py-2 text-base outline-none placeholder:text-white/25 md:text-lg" placeholder="Paste a URL or link" aria-label="URL" />
                 {url && <button type="button" onClick={() => setUrl("")} className="rounded-lg p-2 text-white/40 transition hover:bg-white/10 hover:text-white" aria-label="Clear URL"><X size={16} /></button>}
                 <button type="button" onClick={pasteUrl} className="rounded-lg p-2 text-white/50 transition hover:bg-white/10 hover:text-white" aria-label="Paste URL"><Clipboard size={16} /></button>
               </div>
