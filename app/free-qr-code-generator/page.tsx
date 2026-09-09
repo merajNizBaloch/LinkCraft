@@ -29,28 +29,32 @@ export default function FreeQrCodeGeneratorPage() {
   return (
     <main className="min-h-screen bg-[#f7f7f4] text-[#11110f]">
       <header className="border-b border-[#deded8] bg-[#f7f7f4]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8">
-          <Link href="/" className="inline-flex items-center gap-3 font-black tracking-[-0.04em]">
-            <Image src="/linkcraft-mark.svg" alt="LinkCraft" width={36} height={36} priority />
-            <span className="text-lg">Link<span className="text-[#FF5C35]">Craft</span></span>
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5 md:px-8 md:py-4">
+          <Link href="/" className="inline-flex items-center gap-2.5 font-black tracking-[-0.04em]">
+            <Image src="/linkcraft-mark.svg" alt="LinkCraft" width={34} height={34} priority />
+            <span className="text-base sm:text-lg">Link<span className="text-[#FF5C35]">Craft</span></span>
           </Link>
-          <Link href="/" className="secondary-action"><ArrowLeft size={15} /> All link tools</Link>
+          <Link href="/" className="secondary-action !px-3 !py-2 text-xs"><ArrowLeft size={14} /> <span className="hidden sm:inline">All link tools</span><span className="sm:hidden">Tools</span></Link>
         </div>
       </header>
 
       <section className="border-b border-[#deded8] bg-white">
-        <div className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-20">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-5 sm:py-14 md:px-8 md:py-20">
           <div className="max-w-4xl">
             <div className="section-kicker">Free QR Code Generator & Scanner</div>
-            <h1 className="mt-3 text-4xl font-black leading-[0.96] tracking-[-0.06em] sm:text-5xl md:text-6xl">
+            <h1 className="mt-2 text-3xl font-black leading-[0.98] tracking-[-0.055em] sm:mt-3 sm:text-5xl md:text-6xl">
               Create, customize and scan QR codes <span className="text-[#FF5C35]">for free.</span>
             </h1>
-            <p className="mt-6 max-w-3xl text-base leading-7 text-[#5f5f59] md:text-lg">
-              Turn any website or link into a branded QR code, or scan an existing QR code with your camera or an uploaded image. Customize patterns, colors, finder eyes, gradients and logos, then export as PNG, JPG or SVG.
+            <p className="mt-4 max-w-3xl text-sm leading-6 text-[#5f5f59] sm:mt-6 sm:text-base sm:leading-7 md:text-lg">
+              Paste a link and get a QR instantly. On mobile, preview and download come first; design options stay optional. You can also scan an existing QR with your camera or an uploaded image.
             </p>
+            <div className="mt-5 grid grid-cols-2 gap-2 sm:hidden">
+              <a href="#create-qr" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#11110f] px-3 text-xs font-black text-white">Create QR</a>
+              <Link href="/qr-scanner" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#deded8] bg-white px-3 text-xs font-black">Scan QR</Link>
+            </div>
           </div>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 hidden gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-4">
             {benefits.map(([Icon, title, copy]) => (
               <div key={title} className="feature-card rounded-2xl border border-[#deded8] bg-[#fafaf8] p-5">
                 <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#fff0eb] text-[#FF5C35]"><Icon size={18} /></div>
@@ -60,8 +64,12 @@ export default function FreeQrCodeGeneratorPage() {
             ))}
           </div>
 
-          <FreeQrTool />
-          <QrScannerTool />
+          <div id="create-qr" className="scroll-mt-20">
+            <FreeQrTool />
+          </div>
+          <div className="hidden md:block">
+            <QrScannerTool />
+          </div>
         </div>
       </section>
 
