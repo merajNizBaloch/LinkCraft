@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Grid2X2 } from "lucide-react";
+import { Grid2X2 } from "lucide-react";\nimport { usePathname } from "next/navigation";
 
 export default function MobileTopHeader() {
   return (
