@@ -4,8 +4,8 @@ import {
   LinkCraftAuthSession,
   readAuthError,
   setAuthCookies,
-  supabaseAuthAdminFetch,
   supabaseAuthFetch,
+  supabaseSecretFunctionFetch,
 } from "@/lib/supabase/auth";
 
 export const runtime = "nodejs";
@@ -31,28 +31,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    const createResponse = await supabaseAuthAdminFetch("users", {
+    const createResponse = await supabaseSecretFunctionFetch("linkcraft-create-user", {
       method: "POST",
-      body: JSON.stringify({
-        email,
-        password,
-        email_confirm: true,
-      }),
+      body: JSON.stringify({ email, password }),
     });
 
     if (!createResponse.ok) {
-      const message = await readAuthError(createResponse);
-      const duplicate =
-        createResponse.status === 422 ||
-        /already|registered|exists|duplicate/i.test(message);
-
       return NextResponse.json(
-        {
-          error: duplicate
-            ? "An account with this email already exists. Sign in instead."
-            : message,
-        },
-        { status: duplicate ? 409 : createResponse.status },
+        { error: await readAuthError(createResponse) },
+        { status: createResponse.status },
       );
     }
 
