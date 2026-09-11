@@ -13,16 +13,23 @@ function json(data: unknown, status = 200) {
   });
 }
 
-function getSecretKeys() {
-  const raw = Deno.env.get("SUPABASE_SECRET_KEYS");
-  if (!raw) return [] as string[];
+async function isPrivilegedProjectKey(
+  supabaseUrl: string,
+  apiKey: string,
+) {
+  if (!apiKey) return false;
 
-  try {
-    const parsed = JSON.parse(raw) as Record<string, string>;
-    return Object.values(parsed).filter(Boolean);
-  } catch {
-    return [] as string[];
-  }
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/linkcraft_profiles?select=id&limit=1`,
+    {
+      headers: {
+        apikey: apiKey,
+        Accept: "application/json",
+      },
+    },
+  );
+
+  return response.ok;
 }
 
 Deno.serve(async (req: Request) => {
@@ -30,14 +37,15 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Method not allowed." }, 405);
   }
 
-  const providedKey = req.headers.get("apikey") || "";
-  const validKeys = getSecretKeys();
-  const fallbackSecret = Deno.env.get("SUPABASE_SECRET_KEY") || "";
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-  const authorized =
-    Boolean(providedKey) &&
-    (validKeys.includes(providedKey) ||
-      (fallbackSecret && providedKey === fallbackSecret));
+  if (!supabaseUrl || !serviceRoleKey) {
+    return json({ error: "LinkCraft account service is not configured." }, 503);
+  }
+
+  const providedKey = req.headers.get("apikey") || "";
+  const authorized = await isPrivilegedProjectKey(supabaseUrl, providedKey);
 
   if (!authorized) {
     return json({ error: "Invalid server credential." }, 401);
@@ -60,13 +68,6 @@ Deno.serve(async (req: Request) => {
 
   if (password.length < 8) {
     return json({ error: "Use at least 8 characters for your password." }, 400);
-  }
-
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    return json({ error: "LinkCraft account service is not configured." }, 503);
   }
 
   const admin = createClient(supabaseUrl, serviceRoleKey, {
