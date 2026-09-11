@@ -1,10 +1,17 @@
 "use client";
 
+import { Grid2X2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Grid2X2 } from "lucide-react";\nimport { usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 export default function MobileTopHeader() {
+  const pathname = usePathname();
+
+  if (pathname.startsWith("/u/") || pathname.startsWith("/link-page/dashboard") || pathname === "/login") {
+    return null;
+  }
+
   return (
     <>
       <style>{`
