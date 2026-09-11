@@ -42,3 +42,33 @@ export async function readSupabaseError(response: Response): Promise<SupabaseRes
     return { message: `Supabase request failed with status ${response.status}.` };
   }
 }
+
+
+export async function supabaseStorageFetch(
+  path: string,
+  accessToken: string,
+  init: RequestInit = {},
+) {
+  const { baseUrl, secretKey } = getConfig();
+  const headers = new Headers(init.headers);
+
+  headers.set("apikey", secretKey);
+  headers.set("Authorization", `Bearer ${accessToken}`);
+
+  return fetch(`${baseUrl}/storage/v1/${path.replace(/^\//, "")}`, {
+    ...init,
+    headers,
+    cache: "no-store",
+  });
+}
+
+export function getSupabasePublicStorageUrl(bucket: string, objectPath: string) {
+  const { baseUrl } = getConfig();
+  const safeBucket = encodeURIComponent(bucket);
+  const safePath = objectPath
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+
+  return `${baseUrl}/storage/v1/object/public/${safeBucket}/${safePath}`;
+}
