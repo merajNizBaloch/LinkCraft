@@ -1,15 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import {
   LinkCraftAuthSession,
   readAuthError,
   setAuthCookies,
+  supabaseAuthAdminFetch,
   supabaseAuthFetch,
 } from "@/lib/supabase/auth";
 
 export const runtime = "nodejs";
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   let body: { email?: unknown; password?: unknown };
 
   try {
@@ -30,35 +31,48 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const redirectTo = new URL("/login?confirmed=1", request.nextUrl.origin).toString();
-    const authResponse = await supabaseAuthFetch(
-      `signup?redirect_to=${encodeURIComponent(redirectTo)}`,
-      {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      },
-    );
+    const createResponse = await supabaseAuthAdminFetch("users", {
+      method: "POST",
+      body: JSON.stringify({
+        email,
+        password,
+        email_confirm: true,
+      }),
+    });
 
-    if (!authResponse.ok) {
+    if (!createResponse.ok) {
+      const message = await readAuthError(createResponse);
+      const duplicate =
+        createResponse.status === 422 ||
+        /already|registered|exists|duplicate/i.test(message);
+
       return NextResponse.json(
-        { error: await readAuthError(authResponse) },
-        { status: authResponse.status },
+        {
+          error: duplicate
+            ? "An account with this email already exists. Sign in instead."
+            : message,
+        },
+        { status: duplicate ? 409 : createResponse.status },
       );
     }
 
-    const session = (await authResponse.json()) as LinkCraftAuthSession;
+    const signInResponse = await supabaseAuthFetch("token?grant_type=password", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
 
-    if (session.access_token && session.refresh_token) {
-      const response = NextResponse.json({ user: session.user ?? null, needsConfirmation: false });
-      setAuthCookies(response, session);
-      return response;
+    if (!signInResponse.ok) {
+      console.error("LinkCraft instant signup sign-in failed", await readAuthError(signInResponse));
+      return NextResponse.json(
+        { error: "Your account was created, but LinkCraft could not sign you in automatically. Please sign in." },
+        { status: 500 },
+      );
     }
 
-    return NextResponse.json({
-      user: session.user ?? null,
-      needsConfirmation: true,
-      message: "Check your email to confirm your LinkCraft account.",
-    });
+    const session = (await signInResponse.json()) as LinkCraftAuthSession;
+    const response = NextResponse.json({ user: session.user ?? null });
+    setAuthCookies(response, session);
+    return response;
   } catch (error) {
     console.error("LinkCraft signup error", error);
     return NextResponse.json({ error: "Signup is temporarily unavailable." }, { status: 503 });
