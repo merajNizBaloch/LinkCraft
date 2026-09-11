@@ -131,9 +131,10 @@ export default function LinkPageLanding() {
         <div className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-20">
           <div className="text-center">
             <div className="section-kicker">Simple pricing</div>
-            <h2 className="mt-3 text-4xl font-black tracking-[-0.055em]">Start free. Upgrade once for the whole year.</h2>
+            <h2 className="mt-3 text-4xl font-black tracking-[-0.055em]">Start free. Choose monthly or save with yearly.</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[#72726c]">Pay monthly for flexibility, or choose yearly for roughly two months free.</p>
           </div>
-          <div className="mx-auto mt-10 grid max-w-4xl gap-5 md:grid-cols-2">
+          <div className="mx-auto mt-10 grid max-w-6xl gap-5 lg:grid-cols-3">
             <div className="rounded-[30px] border border-[#deded8] bg-[#fafaf8] p-7">
               <div className="text-sm font-black">Free</div>
               <div className="mt-4 text-4xl font-black tracking-[-0.05em]">Rs. 0</div>
@@ -144,21 +145,32 @@ export default function LinkPageLanding() {
               <Link href="/link-page/dashboard" className="mt-8 flex items-center justify-center rounded-xl border border-[#d8d8d2] bg-white px-4 py-3 text-sm font-black">Create free page</Link>
             </div>
 
-            <div className="relative overflow-hidden rounded-[30px] bg-[#11110f] p-7 text-white shadow-[0_25px_70px_rgba(17,17,15,.18)]">
-              <div className="absolute right-0 top-0 rounded-bl-2xl bg-[#ff5c35] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em]">Yearly · Best value</div>
-              <div className="flex items-center gap-2 text-sm font-black"><Crown size={17} className="text-[#ff7a59]" /> LinkCraft Pro</div>
+            <div className="rounded-[30px] border border-[#d8d8d2] bg-white p-7">
+              <div className="flex items-center gap-2 text-sm font-black"><Crown size={17} className="text-[#ff5c35]" /> Pro Monthly</div>
               <div className="mt-4 flex flex-wrap items-end gap-x-2 gap-y-1">
-                <div className="text-4xl font-black tracking-[-0.05em]">Rs. 4,499</div>
+                <div className="text-4xl font-black tracking-[-0.05em]">Rs. 299</div>
+                <div className="pb-1 text-base font-bold text-[#8b8b84]">/ month</div>
+              </div>
+              <p className="mt-3 text-sm text-[#72726c]">Full Pro access with month-to-month flexibility.</p>
+              <div className="mt-7 grid gap-3">
+                {proFeatures.map((feature) => <div key={feature} className="flex items-center gap-2 text-sm font-semibold"><Check size={16} className="text-[#ff5c35]" />{feature}</div>)}
+              </div>
+              <Link href="/link-page/dashboard" className="mt-8 flex items-center justify-center rounded-xl border border-[#11110f] bg-white px-4 py-3 text-sm font-black text-[#11110f]">Choose monthly</Link>
+            </div>
+
+            <div className="relative overflow-hidden rounded-[30px] bg-[#11110f] p-7 text-white shadow-[0_25px_70px_rgba(17,17,15,.18)]">
+              <div className="absolute right-0 top-0 rounded-bl-2xl bg-[#ff5c35] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em]">Best value</div>
+              <div className="flex items-center gap-2 text-sm font-black"><Crown size={17} className="text-[#ff7a59]" /> Pro Yearly</div>
+              <div className="mt-4 flex flex-wrap items-end gap-x-2 gap-y-1">
+                <div className="text-4xl font-black tracking-[-0.05em]">Rs. 2,999</div>
                 <div className="pb-1 text-base font-bold text-white/45">/ year</div>
               </div>
-              <div className="mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/55">
-                ≈ Rs. 375/month · billed yearly
-              </div>
-              <p className="mt-3 text-sm text-white/50">One annual payment for creators, professionals and businesses that want more control.</p>
+              <div className="mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/65">Save Rs. 589 · about 2 months free</div>
+              <p className="mt-3 text-sm text-white/50">The same Pro features at the lowest effective price.</p>
               <div className="mt-7 grid gap-3">
                 {proFeatures.map((feature) => <div key={feature} className="flex items-center gap-2 text-sm font-semibold"><Check size={16} className="text-[#ff7a59]" />{feature}</div>)}
               </div>
-              <Link href="/link-page/dashboard" className="mt-8 flex items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-black text-[#11110f]">Start free, upgrade yearly</Link>
+              <Link href="/link-page/dashboard" className="mt-8 flex items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-black text-[#11110f]">Choose yearly</Link>
             </div>
           </div>
         </div>
