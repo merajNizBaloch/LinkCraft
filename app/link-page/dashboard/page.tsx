@@ -27,6 +27,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { LinkPageAnalyticsPanel } from "@/components/LinkPageAnalyticsPanel";
 import { LinkPageAvatarUpload } from "@/components/LinkPageAvatarUpload";
 import { LinkPageIconGlyph } from "@/components/LinkPageIconGlyph";
 import {
@@ -38,7 +39,7 @@ import {
   isPremiumTheme,
 } from "@/lib/link-pages";
 
-type Panel = "profile" | "links" | "design" | "pro";
+type Panel = "profile" | "links" | "design" | "analytics" | "pro";
 
 const emptyProfile: LinkPageProfile = {
   username: "",
@@ -59,6 +60,7 @@ const panels: { id: Panel; label: string; helper: string }[] = [
   { id: "profile", label: "Profile", helper: "Identity" },
   { id: "links", label: "Links", helper: "Content" },
   { id: "design", label: "Design", helper: "Appearance" },
+  { id: "analytics", label: "Analytics", helper: "Performance" },
   { id: "pro", label: "Pro", helper: "Growth" },
 ];
 
@@ -68,10 +70,10 @@ const proNow = [
   "Remove LinkCraft branding",
   "Feature up to 3 important links",
   "Custom SEO title and description",
+  "Advanced click analytics",
 ];
 
 const proNext = [
-  "Advanced click analytics",
   "Scheduled links",
   "Custom domains",
 ];
@@ -745,6 +747,10 @@ export default function LinkPageDashboard() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {activePanel === "analytics" && (
+              <LinkPageAnalyticsPanel plan={profile.plan} />
             )}
 
             {activePanel === "pro" && (
