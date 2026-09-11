@@ -11,7 +11,7 @@ const siteUrl = (
 ).replace(/\/$/, "");
 
 const description =
-  "Free QR code generator, QR scanner and link tools by LinkCraft. Create custom QR codes, scan QR codes with camera or image upload, shorten URLs, clean tracking links, build UTM links, create WhatsApp links and inspect URLs.";
+  "Free QR code generator, QR scanner, Link Pages and link tools by LinkCraft. Create a link-in-bio page, custom QR codes, shorten URLs, clean tracking links, build UTM links, create WhatsApp links and inspect URLs.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -35,6 +35,9 @@ export const metadata: Metadata = {
     "scan QR code from image",
     "QR scanner camera",
     "free link tools",
+    "link in bio",
+    "link page builder",
+    "Linktree alternative",
     "URL shortener",
     "link shortener",
     "URL cleaner",
@@ -117,6 +120,7 @@ const structuredData = [
       priceCurrency: "USD",
     },
     featureList: [
+      "Personal Link Pages",
       "Free custom QR code generator",
       "Free QR code scanner with camera",
       "Scan QR codes from uploaded images",
