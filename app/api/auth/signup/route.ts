@@ -5,7 +5,7 @@ import {
   readAuthError,
   setAuthCookies,
   supabaseAuthFetch,
-  supabaseSecretFunctionFetch,
+  supabasePublicFunctionFetch,
 } from "@/lib/supabase/auth";
 
 export const runtime = "nodejs";
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const createResponse = await supabaseSecretFunctionFetch("linkcraft-create-user", {
+    const createResponse = await supabasePublicFunctionFetch("linkcraft-create-user", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
