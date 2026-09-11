@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Link2, QrCode, ScanLine } from "lucide-react";
+import { Home, Link2, QrCode, UserRound } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const items = [
   { href: "/", label: "Home", icon: Home },
   { href: "/free-qr-code-generator", label: "QR", icon: QrCode },
-  { href: "/qr-scanner", label: "Scan", icon: ScanLine },
+  { href: "/link-page", label: "Page", icon: UserRound },
   { href: "/shorten", label: "Shorten", icon: Link2 },
 ] as const;
 
