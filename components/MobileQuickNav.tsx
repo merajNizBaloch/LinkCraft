@@ -14,6 +14,10 @@ const items = [
 export default function MobileQuickNav() {
   const pathname = usePathname();
 
+  if (pathname.startsWith("/u/") || pathname.startsWith("/link-page/dashboard") || pathname === "/login") {
+    return null;
+  }
+
   return (
     <>
       <div className="h-20 md:hidden" aria-hidden="true" />
