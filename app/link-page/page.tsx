@@ -27,9 +27,9 @@ const proFeatures = [
   "Everything in Free",
   "Premium themes",
   "Remove LinkCraft branding",
-  "Advanced analytics",
-  "Scheduled links",
-  "Custom domain support",
+  "Advanced analytics · coming soon",
+  "Scheduled links · coming soon",
+  "Custom domains · coming soon",
 ];
 
 export default function LinkPageLanding() {
