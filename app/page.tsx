@@ -21,7 +21,7 @@ import {
   Zap,
 } from "lucide-react";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import QrDesigner from "@/components/QrDesigner";
 
 type ToolId = "shorten" | "qr" | "clean" | "utm" | "whatsapp" | "codec" | "inspect";
@@ -136,6 +136,18 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [codecValue, setCodecValue] = useState("");
   const [codecMode, setCodecMode] = useState<"encode" | "decode">("encode");
+
+  useEffect(() => {
+    const requestedTool = new URLSearchParams(window.location.search).get("tool") as ToolId | null;
+    if (!requestedTool || !tools.some((tool) => tool.id === requestedTool)) return;
+
+    setActive(requestedTool);
+    if (window.location.hash === "#workspace") {
+      window.requestAnimationFrame(() => {
+        document.getElementById("workspace")?.scrollIntoView({ block: "start" });
+      });
+    }
+  }, []);
 
   const normalized = useMemo(() => normalizeUrl(url), [url]);
   const cleanedResult = useMemo(() => getCleanUrl(url), [url]);
