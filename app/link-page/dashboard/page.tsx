@@ -27,6 +27,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { LinkPageAvatarUpload } from "@/components/LinkPageAvatarUpload";
 import { LinkPageIconGlyph } from "@/components/LinkPageIconGlyph";
 import {
   LINK_PAGE_ICONS,
@@ -503,15 +504,18 @@ export default function LinkPageDashboard() {
                     <span className="text-right text-[10px] font-bold text-[#aaa9a2]">{profile.bio.length}/240</span>
                   </label>
 
-                  <label className="grid gap-2 md:col-span-2">
-                    <span className="field-label">Profile image URL</span>
-                    <input
-                      value={profile.avatarUrl}
-                      onChange={(event) => setProfile({ ...profile, avatarUrl: event.target.value })}
-                      className="input-shell"
-                      placeholder="https://example.com/photo.jpg"
+                  <div className="md:col-span-2">
+                    <LinkPageAvatarUpload
+                      avatarUrl={profile.avatarUrl}
+                      displayName={profile.displayName}
+                      onUploaded={(avatarUrl) =>
+                        setProfile((current) => ({ ...current, avatarUrl }))
+                      }
+                      onRemove={() =>
+                        setProfile((current) => ({ ...current, avatarUrl: "" }))
+                      }
                     />
-                  </label>
+                  </div>
                 </div>
 
                 <button
