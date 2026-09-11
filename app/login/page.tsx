@@ -10,14 +10,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
     setError("");
-    setMessage("");
 
     try {
       const response = await fetch(`/api/auth/${mode}`, {
@@ -25,15 +23,10 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const payload = (await response.json()) as { error?: string; needsConfirmation?: boolean; message?: string };
+      const payload = (await response.json()) as { error?: string };
 
       if (!response.ok) {
         setError(payload.error || "Unable to continue.");
-        return;
-      }
-
-      if (payload.needsConfirmation) {
-        setMessage(payload.message || "Check your email to confirm your account.");
         return;
       }
 
@@ -76,7 +69,7 @@ export default function LoginPage() {
                 <button
                   key={item}
                   type="button"
-                  onClick={() => { setMode(item); setError(""); setMessage(""); }}
+                  onClick={() => { setMode(item); setError(""); }}
                   className={`flex-1 rounded-xl px-4 py-3 text-sm font-black capitalize transition ${mode === item ? "bg-white shadow-sm" : "text-[#777772]"}`}
                 >
                   {item === "login" ? "Sign in" : "Create account"}
@@ -109,7 +102,6 @@ export default function LoginPage() {
               </label>
 
               {error && <div className="rounded-xl border border-[#ffd0c3] bg-[#fff0eb] px-4 py-3 text-sm font-semibold text-[#a53419]">{error}</div>}
-              {message && <div className="rounded-xl border border-[#cfe3ca] bg-[#f1f8ef] px-4 py-3 text-sm font-semibold text-[#42683b]">{message}</div>}
 
               <button disabled={busy} className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#11110f] px-5 py-3.5 text-sm font-black text-white transition hover:bg-[#ff5c35] disabled:opacity-50">
                 {busy ? "Working…" : mode === "login" ? "Sign in" : "Create free account"} <ArrowRight size={17} />
