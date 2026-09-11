@@ -11,6 +11,7 @@ LinkCraft is a free link-utility workspace by TechCraft. Paste a URL once and re
 - WhatsApp click-to-chat link generator
 - URL encoder / decoder
 - Link inspector
+- Account-based Link Pages at `/u/[username]` with a live editor and Free/Pro entitlements
 
 ## Stack
 
@@ -33,6 +34,21 @@ The browser never receives a Supabase secret or a database write credential.
 
 LinkCraft shares the existing Realstate-OS Supabase project but remains isolated through prefixed database objects. RLS is enabled on `public.linkcraft_links`, public roles are explicitly denied, and the table/RPC are available only to the trusted `service_role` used by the server-side secret key.
 
+## Link Pages architecture
+
+Link Pages use the same server-only Supabase access pattern as the shortener:
+
+- `/login` proxies Supabase Auth through LinkCraft server routes and stores session tokens in HTTP-only cookies.
+- `/link-page/dashboard` is the authenticated editor with live preview, theme selection, publishing controls and ordered links.
+- `/u/[username]` renders the public profile server-side.
+- `public.linkcraft_profiles` and `public.linkcraft_profile_links` are isolated with the `linkcraft_` prefix.
+- Public and authenticated database roles are denied direct table access; trusted server routes use the existing server secret.
+- `plan` and `branding_enabled` are server-controlled fields so Free users cannot self-upgrade by changing browser payloads.
+
+The checked-in setup SQL is:
+
+`supabase/linkcraft-link-pages.sql`
+
 ## Supabase setup
 
 LinkCraft currently uses the Realstate-OS Supabase project:
@@ -46,6 +62,8 @@ The required schema has already been applied to that project. The checked-in ref
 It creates only LinkCraft-specific objects:
 
 - `public.linkcraft_links`
+- `public.linkcraft_profiles`
+- `public.linkcraft_profile_links`
 - unique short codes
 - optional custom aliases
 - expiration support
@@ -77,7 +95,7 @@ npm install
 npm run dev
 ```
 
-Then open `http://localhost:3000` for the toolbox or `http://localhost:3000/shorten` for the persistent shortener.
+Then open `http://localhost:3000` for the toolbox, `http://localhost:3000/shorten` for the persistent shortener, or `http://localhost:3000/link-page` for Link Pages.
 
 ## Cloudflare Workers
 
