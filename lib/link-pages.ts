@@ -3,6 +3,10 @@ export const LINK_PAGE_THEMES = [
   { id: "coral", name: "Coral", premium: false },
   { id: "midnight", name: "Midnight", premium: true },
   { id: "glass", name: "Glass", premium: true },
+  { id: "aurora", name: "Aurora", premium: true },
+  { id: "studio", name: "Studio", premium: true },
+  { id: "forest", name: "Forest", premium: true },
+  { id: "sunset", name: "Sunset", premium: true },
 ] as const;
 
 export type LinkPageTheme = (typeof LINK_PAGE_THEMES)[number]["id"];
@@ -36,6 +40,7 @@ export type LinkPageItem = {
   url: string;
   icon: LinkPageIcon;
   isActive: boolean;
+  isFeatured: boolean;
 };
 
 export type LinkPageProfile = {
@@ -45,6 +50,9 @@ export type LinkPageProfile = {
   bio: string;
   avatarUrl: string;
   theme: LinkPageTheme;
+  accentColor: string;
+  seoTitle: string;
+  seoDescription: string;
   plan: "free" | "pro";
   brandingEnabled: boolean;
   isPublished: boolean;
