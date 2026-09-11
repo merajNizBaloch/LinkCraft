@@ -247,6 +247,7 @@ export default function Home() {
             </div>
           </button>
           <div className="flex items-center gap-2">
+            <a href="/link-page" className="hidden rounded-full border border-[#ffd0c3] bg-[#fff0eb] px-4 py-2 text-xs font-black text-[#b93617] transition hover:-translate-y-0.5 hover:border-[#ff5c35] sm:block">Link Page</a>
             <a href="/free-qr-code-generator" className="hidden rounded-full border border-[#deded8] bg-white px-4 py-2 text-xs font-bold text-[#11110f] transition accent-button-hover md:block">Free QR</a>
             <a href="/shorten" className="hidden rounded-full bg-[#11110f] px-4 py-2 text-xs font-bold text-white transition accent-button-hover hover:-translate-y-0.5 sm:block">Shorten a link</a>
           </div>
