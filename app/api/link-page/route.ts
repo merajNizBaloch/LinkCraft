@@ -2,9 +2,11 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import {
+  LinkPageIcon,
   LinkPageItem,
   LinkPageTheme,
   isPremiumTheme,
+  isValidLinkPageIcon,
   isValidLinkPageUsername,
   normalizeLinkPageUsername,
   normalizePublicLink,
@@ -31,6 +33,7 @@ type LinkRow = {
   id: string;
   title: string;
   url: string;
+  icon: LinkPageIcon;
   position: number;
   is_active: boolean;
 };
@@ -57,7 +60,7 @@ async function getProfile(userId: string) {
 
 async function getLinks(profileId: string) {
   const response = await supabaseAdminFetch(
-    `linkcraft_profile_links?select=id,title,url,position,is_active&profile_id=eq.${profileId}&order=position.asc`,
+    `linkcraft_profile_links?select=id,title,url,icon,position,is_active&profile_id=eq.${profileId}&order=position.asc`,
   );
 
   if (!response.ok) {
@@ -110,6 +113,7 @@ export async function GET() {
           id: link.id,
           title: link.title,
           url: link.url,
+          icon: link.icon || "link",
           isActive: link.is_active,
         })),
       },
@@ -246,9 +250,11 @@ export async function PUT(request: Request) {
 
     for (const entry of incomingLinks) {
       if (!entry || typeof entry !== "object") continue;
-      const item = entry as { title?: unknown; url?: unknown; isActive?: unknown };
+      const item = entry as { title?: unknown; url?: unknown; icon?: unknown; isActive?: unknown };
       const title = typeof item.title === "string" ? item.title.trim().slice(0, 80) : "";
       const rawUrl = typeof item.url === "string" ? item.url : "";
+      const requestedIcon = typeof item.icon === "string" ? item.icon : "link";
+      const icon: LinkPageIcon = isValidLinkPageIcon(requestedIcon) ? requestedIcon : "link";
 
       if (!title || !rawUrl.trim()) continue;
 
@@ -256,6 +262,7 @@ export async function PUT(request: Request) {
         links.push({
           title,
           url: normalizePublicLink(rawUrl),
+          icon,
           isActive: item.isActive !== false,
         });
       } catch {
@@ -286,6 +293,7 @@ export async function PUT(request: Request) {
               profile_id: savedProfile.id,
               title: link.title,
               url: link.url,
+              icon: link.icon,
               position,
               is_active: link.isActive,
             })),
