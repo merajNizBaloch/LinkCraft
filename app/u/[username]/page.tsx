@@ -3,7 +3,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import type { LinkPageTheme } from "@/lib/link-pages";
+import { LinkPageIconGlyph } from "@/components/LinkPageIconGlyph";
+import { SharePageButton } from "@/components/SharePageButton";
+import type { LinkPageIcon, LinkPageTheme } from "@/lib/link-pages";
 import { supabaseAdminFetch } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +29,7 @@ type LinkRow = {
   id: string;
   title: string;
   url: string;
+  icon: LinkPageIcon;
   position: number;
   is_active: boolean;
 };
@@ -45,7 +48,7 @@ async function loadPublicProfile(username: string) {
   if (!profile) return null;
 
   const linksResponse = await supabaseAdminFetch(
-    `linkcraft_profile_links?select=id,title,url,position,is_active&profile_id=eq.${profile.id}&is_active=eq.true&order=position.asc`,
+    `linkcraft_profile_links?select=id,title,url,icon,position,is_active&profile_id=eq.${profile.id}&is_active=eq.true&order=position.asc`,
   );
 
   const links = linksResponse.ok ? ((await linksResponse.json()) as LinkRow[]) : [];
@@ -113,6 +116,10 @@ export default async function PublicLinkPage(context: PageContext) {
   return (
     <main className={`min-h-screen px-5 py-10 md:py-14 ${theme.page}`}>
       <div className="mx-auto max-w-[620px]">
+        <div className="mb-5 flex justify-end">
+          <SharePageButton title={profile.display_name || `@${profile.username} on LinkCraft`} />
+        </div>
+
         <section className="text-center">
           {profile.avatar_url ? (
             <div
@@ -138,8 +145,11 @@ export default async function PublicLinkPage(context: PageContext) {
               rel="noopener noreferrer"
               className={`group flex min-h-16 items-center justify-between rounded-[20px] px-5 py-4 text-sm font-black shadow-[0_8px_30px_rgba(0,0,0,.06)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(0,0,0,.11)] ${theme.button}`}
             >
-              <span className="truncate pr-4">{item.title}</span>
-              <ExternalLink size={16} className="shrink-0 opacity-50 transition group-hover:opacity-100" />
+              <span className="flex min-w-0 items-center gap-3">
+                <LinkPageIconGlyph icon={item.icon || "link"} size={18} className="shrink-0 opacity-75" />
+                <span className="truncate">{item.title}</span>
+              </span>
+              <ExternalLink size={16} className="ml-4 shrink-0 opacity-50 transition group-hover:opacity-100" />
             </a>
           ))}
         </section>
