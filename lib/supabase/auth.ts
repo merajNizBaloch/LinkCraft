@@ -48,24 +48,24 @@ export async function supabaseAuthFetch(path: string, init: RequestInit = {}) {
   });
 }
 
-export async function supabaseAuthAdminFetch(path: string, init: RequestInit = {}) {
+export async function supabaseSecretFunctionFetch(name: string, init: RequestInit = {}) {
   const { baseUrl, secretKey } = getSupabaseConfig();
   const headers = new Headers(init.headers);
 
   headers.set("apikey", secretKey);
-  headers.set("Authorization", `Bearer ${secretKey}`);
   headers.set("Accept", "application/json");
 
   if (init.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
-  return fetch(`${baseUrl}/auth/v1/admin/${path.replace(/^\//, "")}`, {
+  return fetch(`${baseUrl}/functions/v1/${name.replace(/^\//, "")}`, {
     ...init,
     headers,
     cache: "no-store",
   });
 }
+
 
 export async function getAuthUser(accessToken: string | undefined) {
   if (!accessToken) return null;
