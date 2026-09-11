@@ -242,22 +242,19 @@ export function LinkPageAnalyticsPanel({ plan }: { plan: "free" | "pro" }) {
 
         <div className="mt-7 grid gap-3 sm:grid-cols-3">
           {[
-            [Eye, "Page views", data.views],
-            [MousePointerClick, "Link clicks", data.clicks],
-            [TrendingUp, "Click-through rate", percent(data.ctr)],
-          ].map(([Icon, label, value]) => {
-            const MetricIcon = Icon as typeof Eye;
-            return (
-              <div key={label as string} className="rounded-[20px] border border-[#deded8] bg-[#fafaf8] p-4">
-                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#8d8d86]">
-                  <MetricIcon size={14} /> {label as string}
-                </div>
-                <div className="mt-3 text-3xl font-black tracking-[-0.05em]">
-                  {loading ? "—" : typeof value === "number" ? number(value) : value}
-                </div>
+            { icon: Eye, label: "Page views", value: number(data.views) },
+            { icon: MousePointerClick, label: "Link clicks", value: number(data.clicks) },
+            { icon: TrendingUp, label: "Click-through rate", value: percent(data.ctr) },
+          ].map(({ icon: MetricIcon, label, value }) => (
+            <div key={label} className="rounded-[20px] border border-[#deded8] bg-[#fafaf8] p-4">
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#8d8d86]">
+                <MetricIcon size={14} /> {label}
               </div>
-            );
-          })}
+              <div className="mt-3 text-3xl font-black tracking-[-0.05em]">
+                {loading ? "—" : value}
+              </div>
+            </div>
+          ))}
         </div>
 
         <div className="mt-5">
@@ -309,21 +306,18 @@ export function LinkPageAnalyticsPanel({ plan }: { plan: "free" | "pro" }) {
 
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               {[
-                [Link2, "Top links"],
-                [BarChart3, "Traffic sources"],
-                [Smartphone, "Device mix"],
-              ].map(([Icon, label]) => {
-                const FeatureIcon = Icon as typeof Link2;
-                return (
-                  <div key={label as string} className="rounded-2xl border border-white/10 bg-white/[0.05] p-4">
-                    <FeatureIcon size={17} className="text-[#ff8060]" />
-                    <div className="mt-3 text-sm font-black">{label as string}</div>
-                    <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.1em] text-white/35">
-                      Pro
-                    </div>
+                { icon: Link2, label: "Top links" },
+                { icon: BarChart3, label: "Traffic sources" },
+                { icon: Smartphone, label: "Device mix" },
+              ].map(({ icon: FeatureIcon, label }) => (
+                <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.05] p-4">
+                  <FeatureIcon size={17} className="text-[#ff8060]" />
+                  <div className="mt-3 text-sm font-black">{label}</div>
+                  <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.1em] text-white/35">
+                    Pro
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
 
             <Link
