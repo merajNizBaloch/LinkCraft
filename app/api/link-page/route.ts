@@ -24,6 +24,9 @@ type ProfileRow = {
   bio: string;
   avatar_url: string | null;
   theme: LinkPageTheme;
+  accent_color: string;
+  seo_title: string;
+  seo_description: string;
   plan: "free" | "pro";
   branding_enabled: boolean;
   is_published: boolean;
@@ -36,6 +39,7 @@ type LinkRow = {
   icon: LinkPageIcon;
   position: number;
   is_active: boolean;
+  is_featured: boolean;
 };
 
 async function authenticatedUser() {
@@ -47,7 +51,7 @@ async function authenticatedUser() {
 
 async function getProfile(userId: string) {
   const response = await supabaseAdminFetch(
-    `linkcraft_profiles?select=id,user_id,username,display_name,bio,avatar_url,theme,plan,branding_enabled,is_published&user_id=eq.${userId}&limit=1`,
+    `linkcraft_profiles?select=id,user_id,username,display_name,bio,avatar_url,theme,accent_color,seo_title,seo_description,plan,branding_enabled,is_published&user_id=eq.${userId}&limit=1`,
   );
 
   if (!response.ok) {
@@ -60,7 +64,7 @@ async function getProfile(userId: string) {
 
 async function getLinks(profileId: string) {
   const response = await supabaseAdminFetch(
-    `linkcraft_profile_links?select=id,title,url,icon,position,is_active&profile_id=eq.${profileId}&order=position.asc`,
+    `linkcraft_profile_links?select=id,title,url,icon,position,is_active,is_featured&profile_id=eq.${profileId}&order=position.asc`,
   );
 
   if (!response.ok) {
@@ -88,6 +92,9 @@ export async function GET() {
           bio: "",
           avatarUrl: "",
           theme: "minimal",
+          accentColor: "#ff5c35",
+          seoTitle: "",
+          seoDescription: "",
           plan: "free",
           brandingEnabled: true,
           isPublished: true,
@@ -106,6 +113,9 @@ export async function GET() {
         bio: profile.bio,
         avatarUrl: profile.avatar_url || "",
         theme: profile.theme,
+        accentColor: profile.accent_color || "#ff5c35",
+        seoTitle: profile.seo_title || "",
+        seoDescription: profile.seo_description || "",
         plan: profile.plan,
         brandingEnabled: profile.branding_enabled,
         isPublished: profile.is_published,
@@ -115,6 +125,7 @@ export async function GET() {
           url: link.url,
           icon: link.icon || "link",
           isActive: link.is_active,
+          isFeatured: link.is_featured === true,
         })),
       },
     });
@@ -138,6 +149,10 @@ export async function PUT(request: Request) {
       bio?: unknown;
       avatarUrl?: unknown;
       theme?: unknown;
+      accentColor?: unknown;
+      seoTitle?: unknown;
+      seoDescription?: unknown;
+      brandingEnabled?: unknown;
       isPublished?: unknown;
       links?: unknown;
     };
@@ -147,6 +162,10 @@ export async function PUT(request: Request) {
     const bio = typeof body.bio === "string" ? body.bio.trim().slice(0, 240) : "";
     const avatarUrl = typeof body.avatarUrl === "string" ? body.avatarUrl.trim().slice(0, 600) : "";
     const requestedTheme = typeof body.theme === "string" ? body.theme : "minimal";
+    const requestedAccentColor = typeof body.accentColor === "string" ? body.accentColor.trim() : "#ff5c35";
+    const requestedSeoTitle = typeof body.seoTitle === "string" ? body.seoTitle.trim().slice(0, 70) : "";
+    const requestedSeoDescription = typeof body.seoDescription === "string" ? body.seoDescription.trim().slice(0, 160) : "";
+    const requestedBrandingEnabled = body.brandingEnabled !== false;
     const isPublished = body.isPublished !== false;
 
     if (!isValidLinkPageUsername(username)) {
@@ -183,7 +202,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "That LinkCraft username is already taken." }, { status: 409 });
     }
 
-    const allowedThemes = new Set<LinkPageTheme>(["minimal", "coral", "midnight", "glass"]);
+    const allowedThemes = new Set<LinkPageTheme>(["minimal", "coral", "midnight", "glass", "aurora", "studio", "forest", "sunset"]);
     const theme = allowedThemes.has(requestedTheme as LinkPageTheme)
       ? (requestedTheme as LinkPageTheme)
       : "minimal";
@@ -193,12 +212,25 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "That theme is available on LinkCraft Pro." }, { status: 403 });
     }
 
+    if (!/^#[0-9A-Fa-f]{6}$/.test(requestedAccentColor)) {
+      return NextResponse.json({ error: "Accent color must be a valid 6-digit hex color." }, { status: 400 });
+    }
+
+    const accentColor = plan === "pro" ? requestedAccentColor : "#ff5c35";
+    const seoTitle = plan === "pro" ? requestedSeoTitle : "";
+    const seoDescription = plan === "pro" ? requestedSeoDescription : "";
+    const brandingEnabled = plan === "pro" ? requestedBrandingEnabled : true;
+
     const profilePayload = {
       username,
       display_name: displayName,
       bio,
       avatar_url: avatarUrl || null,
       theme,
+      accent_color: accentColor,
+      seo_title: seoTitle,
+      seo_description: seoDescription,
+      branding_enabled: brandingEnabled,
       is_published: isPublished,
       updated_at: new Date().toISOString(),
     };
@@ -207,7 +239,7 @@ export async function PUT(request: Request) {
 
     if (existing) {
       const response = await supabaseAdminFetch(
-        `linkcraft_profiles?user_id=eq.${user.id}&select=id,user_id,username,display_name,bio,avatar_url,theme,plan,branding_enabled,is_published`,
+        `linkcraft_profiles?user_id=eq.${user.id}&select=id,user_id,username,display_name,bio,avatar_url,theme,accent_color,seo_title,seo_description,plan,branding_enabled,is_published`,
         {
           method: "PATCH",
           headers: { Prefer: "return=representation" },
@@ -222,7 +254,7 @@ export async function PUT(request: Request) {
       savedProfile = ((await response.json()) as ProfileRow[])[0];
     } else {
       const response = await supabaseAdminFetch(
-        "linkcraft_profiles?select=id,user_id,username,display_name,bio,avatar_url,theme,plan,branding_enabled,is_published",
+        "linkcraft_profiles?select=id,user_id,username,display_name,bio,avatar_url,theme,accent_color,seo_title,seo_description,plan,branding_enabled,is_published",
         {
           method: "POST",
           headers: { Prefer: "return=representation" },
@@ -250,7 +282,7 @@ export async function PUT(request: Request) {
 
     for (const entry of incomingLinks) {
       if (!entry || typeof entry !== "object") continue;
-      const item = entry as { title?: unknown; url?: unknown; icon?: unknown; isActive?: unknown };
+      const item = entry as { title?: unknown; url?: unknown; icon?: unknown; isActive?: unknown; isFeatured?: unknown };
       const title = typeof item.title === "string" ? item.title.trim().slice(0, 80) : "";
       const rawUrl = typeof item.url === "string" ? item.url : "";
       const requestedIcon = typeof item.icon === "string" ? item.icon : "link";
@@ -264,10 +296,16 @@ export async function PUT(request: Request) {
           url: normalizePublicLink(rawUrl),
           icon,
           isActive: item.isActive !== false,
+          isFeatured: plan === "pro" && item.isFeatured === true,
         });
       } catch {
         return NextResponse.json({ error: `“${title}” has an invalid URL.` }, { status: 400 });
       }
+    }
+
+    const featuredCount = links.filter((link) => link.isFeatured).length;
+    if (featuredCount > 3) {
+      return NextResponse.json({ error: "LinkCraft Pro supports up to 3 featured links." }, { status: 400 });
     }
 
     const deleteResponse = await supabaseAdminFetch(
@@ -296,6 +334,7 @@ export async function PUT(request: Request) {
               icon: link.icon,
               position,
               is_active: link.isActive,
+              is_featured: link.isFeatured,
             })),
           ),
         },
@@ -315,6 +354,9 @@ export async function PUT(request: Request) {
         bio: savedProfile.bio,
         avatarUrl: savedProfile.avatar_url || "",
         theme: savedProfile.theme,
+        accentColor: savedProfile.accent_color || "#ff5c35",
+        seoTitle: savedProfile.seo_title || "",
+        seoDescription: savedProfile.seo_description || "",
         plan: savedProfile.plan,
         brandingEnabled: savedProfile.branding_enabled,
         isPublished: savedProfile.is_published,
