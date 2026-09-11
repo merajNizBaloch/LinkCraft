@@ -287,3 +287,174 @@ from public, anon, authenticated;
 grant execute
 on function public.linkcraft_consume_signup_rate_limit(text, integer, integer)
 to service_role;
+
+
+-- Link Page analytics.
+create table if not exists public.linkcraft_page_events (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references public.linkcraft_profiles(id) on delete cascade,
+  link_id uuid references public.linkcraft_profile_links(id) on delete set null,
+  event_type text not null,
+  link_title text,
+  referrer_host text,
+  device_type text not null default 'other',
+  visitor_hash text,
+  destination_host text,
+  created_at timestamptz not null default now(),
+  constraint linkcraft_page_events_type_check
+    check (event_type in ('page_view','link_click')),
+  constraint linkcraft_page_events_device_check
+    check (device_type in ('mobile','tablet','desktop','other')),
+  constraint linkcraft_page_events_link_title_length
+    check (link_title is null or char_length(link_title) <= 80),
+  constraint linkcraft_page_events_referrer_length
+    check (referrer_host is null or char_length(referrer_host) <= 160),
+  constraint linkcraft_page_events_destination_length
+    check (destination_host is null or char_length(destination_host) <= 160)
+);
+
+create index if not exists linkcraft_page_events_profile_created_idx
+  on public.linkcraft_page_events (profile_id, created_at desc);
+
+create index if not exists linkcraft_page_events_profile_type_created_idx
+  on public.linkcraft_page_events (profile_id, event_type, created_at desc);
+
+create index if not exists linkcraft_page_events_link_created_idx
+  on public.linkcraft_page_events (link_id, created_at desc)
+  where link_id is not null;
+
+create unique index if not exists linkcraft_page_events_view_dedupe_idx
+  on public.linkcraft_page_events (visitor_hash)
+  where event_type = 'page_view' and visitor_hash is not null;
+
+alter table public.linkcraft_page_events enable row level security;
+
+revoke all on table public.linkcraft_page_events from anon, authenticated;
+grant select, insert, update, delete on table public.linkcraft_page_events to service_role;
+
+drop policy if exists linkcraft_page_events_deny_public on public.linkcraft_page_events;
+create policy linkcraft_page_events_deny_public
+on public.linkcraft_page_events
+for all
+to anon, authenticated
+using (false)
+with check (false);
+
+create or replace function public.linkcraft_analytics_summary(
+  p_profile_id uuid,
+  p_days integer default 30
+)
+returns jsonb
+language plpgsql
+stable
+security invoker
+set search_path = ''
+as $$
+declare
+  v_days integer := greatest(1, least(coalesce(p_days, 30), 365));
+  v_start timestamptz := now() - make_interval(days => greatest(1, least(coalesce(p_days, 30), 365)));
+  v_views bigint;
+  v_clicks bigint;
+  v_lifetime_views bigint;
+  v_lifetime_clicks bigint;
+  v_daily jsonb;
+  v_top_links jsonb;
+  v_referrers jsonb;
+  v_devices jsonb;
+begin
+  select count(*) filter (where event_type = 'page_view'),
+         count(*) filter (where event_type = 'link_click')
+  into v_views, v_clicks
+  from public.linkcraft_page_events
+  where profile_id = p_profile_id
+    and created_at >= v_start;
+
+  select count(*) filter (where event_type = 'page_view'),
+         count(*) filter (where event_type = 'link_click')
+  into v_lifetime_views, v_lifetime_clicks
+  from public.linkcraft_page_events
+  where profile_id = p_profile_id;
+
+  select coalesce(jsonb_agg(to_jsonb(day_row) order by day_row.day), '[]'::jsonb)
+  into v_daily
+  from (
+    select
+      series::date as day,
+      count(e.id) filter (where e.event_type = 'page_view')::int as views,
+      count(e.id) filter (where e.event_type = 'link_click')::int as clicks
+    from generate_series(
+      date_trunc('day', now() - make_interval(days => v_days - 1)),
+      date_trunc('day', now()),
+      interval '1 day'
+    ) series
+    left join public.linkcraft_page_events e
+      on e.profile_id = p_profile_id
+     and e.created_at >= series
+     and e.created_at < series + interval '1 day'
+    group by series
+  ) day_row;
+
+  select coalesce(jsonb_agg(to_jsonb(link_row) order by link_row.clicks desc, link_row.title), '[]'::jsonb)
+  into v_top_links
+  from (
+    select
+      coalesce(nullif(link_title, ''), 'Untitled link') as title,
+      count(*)::int as clicks
+    from public.linkcraft_page_events
+    where profile_id = p_profile_id
+      and event_type = 'link_click'
+      and created_at >= v_start
+    group by coalesce(nullif(link_title, ''), 'Untitled link')
+    order by count(*) desc
+    limit 8
+  ) link_row;
+
+  select coalesce(jsonb_agg(to_jsonb(ref_row) order by ref_row.views desc, ref_row.source), '[]'::jsonb)
+  into v_referrers
+  from (
+    select
+      coalesce(nullif(referrer_host, ''), 'Direct / unknown') as source,
+      count(*)::int as views
+    from public.linkcraft_page_events
+    where profile_id = p_profile_id
+      and event_type = 'page_view'
+      and created_at >= v_start
+    group by coalesce(nullif(referrer_host, ''), 'Direct / unknown')
+    order by count(*) desc
+    limit 8
+  ) ref_row;
+
+  select coalesce(jsonb_agg(to_jsonb(device_row) order by device_row.views desc, device_row.device), '[]'::jsonb)
+  into v_devices
+  from (
+    select
+      device_type as device,
+      count(*)::int as views
+    from public.linkcraft_page_events
+    where profile_id = p_profile_id
+      and event_type = 'page_view'
+      and created_at >= v_start
+    group by device_type
+    order by count(*) desc
+  ) device_row;
+
+  return jsonb_build_object(
+    'rangeDays', v_days,
+    'views', v_views,
+    'clicks', v_clicks,
+    'ctr', case when v_views > 0 then round((v_clicks::numeric / v_views::numeric) * 100, 1) else 0 end,
+    'lifetimeViews', v_lifetime_views,
+    'lifetimeClicks', v_lifetime_clicks,
+    'lifetimeCtr', case when v_lifetime_views > 0 then round((v_lifetime_clicks::numeric / v_lifetime_views::numeric) * 100, 1) else 0 end,
+    'daily', v_daily,
+    'topLinks', v_top_links,
+    'referrers', v_referrers,
+    'devices', v_devices
+  );
+end;
+$$;
+
+revoke execute on function public.linkcraft_analytics_summary(uuid, integer)
+  from public, anon, authenticated;
+grant execute on function public.linkcraft_analytics_summary(uuid, integer)
+  to service_role;

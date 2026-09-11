@@ -49,7 +49,7 @@ const proHighlights = [
   ["Featured links", "Highlight up to three priority destinations."],
   ["Branding control", "Remove the LinkCraft footer from your public page."],
   ["SEO controls", "Set a custom search title and description for your page."],
-  ["Growth roadmap", "Analytics, scheduled links and custom domains are next."],
+  ["Advanced analytics", "Track views, clicks, CTR, top links, traffic sources and devices."],
 ];
 
 export default function LinkPageLanding() {
@@ -200,7 +200,7 @@ export default function LinkPageLanding() {
               </div>
               <h2 className="mt-5 text-4xl font-black tracking-[-0.055em]">Pro should feel like a real upgrade.</h2>
               <p className="mt-4 max-w-xl text-sm leading-7 text-white/55">
-                Pro now focuses on brand control and page presentation you can use immediately—not only future features.
+                Pro now combines brand control with measurable performance data you can use immediately.
               </p>
               <a href="#pricing" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-black text-[#11110f]">
                 Compare plans <ArrowRight size={16} />

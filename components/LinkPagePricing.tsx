@@ -10,6 +10,7 @@ const freeFeatures = [
   "Link icons",
   "2 free themes",
   "Shareable LinkCraft URL",
+  "Basic views, clicks & CTR analytics",
 ];
 
 const proFeatures = [
@@ -19,10 +20,10 @@ const proFeatures = [
   "Remove LinkCraft branding",
   "Feature up to 3 priority links",
   "Custom SEO title & description",
+  "Advanced click analytics",
 ];
 
 const comingSoon = [
-  "Advanced click analytics",
   "Scheduled links",
   "Custom domains",
 ];
