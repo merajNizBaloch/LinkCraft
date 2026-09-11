@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import {
   getSupabasePublicStorageUrl,
+  supabaseAdminFetch,
   supabaseStorageFetch,
 } from "@/lib/supabase/admin";
 import {
@@ -91,9 +92,33 @@ export async function POST(request: Request) {
     const publicUrl = getSupabasePublicStorageUrl(AVATAR_BUCKET, objectPath);
     const avatarUrl = `${publicUrl}?v=${Date.now()}`;
 
+    const profileResponse = await supabaseAdminFetch(
+      `linkcraft_profiles?select=id&user_id=eq.${user.id}&limit=1`,
+    );
+
+    let persisted = false;
+    if (profileResponse.ok) {
+      const profiles = (await profileResponse.json()) as { id: string }[];
+      if (profiles[0]) {
+        const updateResponse = await supabaseAdminFetch(
+          `linkcraft_profiles?user_id=eq.${user.id}`,
+          {
+            method: "PATCH",
+            headers: { Prefer: "return=minimal" },
+            body: JSON.stringify({
+              avatar_url: avatarUrl,
+              updated_at: new Date().toISOString(),
+            }),
+          },
+        );
+        persisted = updateResponse.ok;
+      }
+    }
+
     return NextResponse.json({
       avatarUrl,
       size: avatar.size,
+      persisted,
     });
   } catch (error) {
     console.error("LinkCraft avatar upload error", error);
