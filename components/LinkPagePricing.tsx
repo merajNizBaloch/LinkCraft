@@ -19,10 +19,10 @@ const proFeatures = [
   "Remove LinkCraft branding",
   "Feature up to 3 priority links",
   "Custom SEO title & description",
+  "Advanced click analytics",
 ];
 
 const comingSoon = [
-  "Advanced click analytics",
   "Scheduled links",
   "Custom domains",
 ];
