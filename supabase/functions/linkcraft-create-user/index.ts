@@ -21,6 +21,11 @@ async function sha256(value: string) {
     .join("");
 }
 
+async function getLinkCraftAuthEmail(email: string) {
+  const digest = await sha256(`linkcraft:${email}`);
+  return `lc_${digest.slice(0, 48)}@auth.linkcraft.techcraftsolution.com`;
+}
+
 function getClientIp(req: Request) {
   const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0]?.trim() || "";
@@ -106,10 +111,16 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  const authEmail = await getLinkCraftAuthEmail(email);
+
   const { data, error } = await admin.auth.admin.createUser({
-    email,
+    email: authEmail,
     password,
     email_confirm: true,
+    app_metadata: {
+      product: "linkcraft",
+      login_email: email,
+    },
   });
 
   if (error) {
@@ -120,7 +131,7 @@ Deno.serve(async (req: Request) => {
     return json(
       {
         error: duplicate
-          ? "An account with this email already exists. Sign in instead."
+          ? "A LinkCraft account with this email already exists. Sign in instead."
           : error.message,
       },
       duplicate ? 409 : error.status || 500,
@@ -130,7 +141,7 @@ Deno.serve(async (req: Request) => {
   return json({
     user: {
       id: data.user.id,
-      email: data.user.email,
+      email,
     },
   });
 });
