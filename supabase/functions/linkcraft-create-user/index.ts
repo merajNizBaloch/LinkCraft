@@ -13,23 +13,18 @@ function json(data: unknown, status = 200) {
   });
 }
 
-async function isPrivilegedProjectKey(
-  supabaseUrl: string,
-  apiKey: string,
-) {
-  if (!apiKey) return false;
+async function sha256(value: string) {
+  const encoded = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
 
-  const response = await fetch(
-    `${supabaseUrl}/rest/v1/linkcraft_profiles?select=id&limit=1`,
-    {
-      headers: {
-        apikey: apiKey,
-        Accept: "application/json",
-      },
-    },
-  );
-
-  return response.ok;
+function getClientIp(req: Request) {
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0]?.trim() || "";
+  return req.headers.get("cf-connecting-ip") || req.headers.get("x-real-ip") || "";
 }
 
 Deno.serve(async (req: Request) => {
@@ -42,13 +37,6 @@ Deno.serve(async (req: Request) => {
 
   if (!supabaseUrl || !serviceRoleKey) {
     return json({ error: "LinkCraft account service is not configured." }, 503);
-  }
-
-  const providedKey = req.headers.get("apikey") || "";
-  const authorized = await isPrivilegedProjectKey(supabaseUrl, providedKey);
-
-  if (!authorized) {
-    return json({ error: "Invalid server credential." }, 401);
   }
 
   let body: SignupBody;
@@ -76,6 +64,47 @@ Deno.serve(async (req: Request) => {
       persistSession: false,
     },
   });
+
+  const emailBucket = `email:${await sha256(email)}`;
+  const { data: emailAllowed, error: emailRateError } = await admin.rpc(
+    "linkcraft_consume_signup_rate_limit",
+    {
+      p_bucket: emailBucket,
+      p_limit: 5,
+      p_window_seconds: 3600,
+    },
+  );
+
+  if (emailRateError) {
+    console.error("LinkCraft signup email rate-limit error", emailRateError);
+    return json({ error: "Signup is temporarily unavailable." }, 503);
+  }
+
+  if (!emailAllowed) {
+    return json({ error: "Too many signup attempts for this email. Try again later." }, 429);
+  }
+
+  const clientIp = getClientIp(req);
+  if (clientIp) {
+    const ipBucket = `ip:${await sha256(clientIp)}`;
+    const { data: ipAllowed, error: ipRateError } = await admin.rpc(
+      "linkcraft_consume_signup_rate_limit",
+      {
+        p_bucket: ipBucket,
+        p_limit: 20,
+        p_window_seconds: 3600,
+      },
+    );
+
+    if (ipRateError) {
+      console.error("LinkCraft signup IP rate-limit error", ipRateError);
+      return json({ error: "Signup is temporarily unavailable." }, 503);
+    }
+
+    if (!ipAllowed) {
+      return json({ error: "Too many signup attempts from this network. Try again later." }, 429);
+    }
+  }
 
   const { data, error } = await admin.auth.admin.createUser({
     email,

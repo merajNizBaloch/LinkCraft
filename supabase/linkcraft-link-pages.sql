@@ -72,3 +72,78 @@ comment on table public.linkcraft_profiles is 'LinkCraft Link Page profiles. Acc
 comment on table public.linkcraft_profile_links is 'Ordered public links belonging to LinkCraft Link Page profiles.';
 comment on column public.linkcraft_profiles.plan is 'Subscription entitlement. Only trusted server/admin workflows should change this value.';
 comment on column public.linkcraft_profiles.branding_enabled is 'Controls LinkCraft footer branding. Intended to be disabled only by paid entitlement workflows.';
+
+
+-- Public signup protection for the LinkCraft confirmed-user Edge Function.
+create table if not exists public.linkcraft_signup_rate_limits (
+  bucket text primary key,
+  window_started_at timestamptz not null default now(),
+  attempt_count integer not null default 0,
+  updated_at timestamptz not null default now(),
+  constraint linkcraft_signup_rate_limits_count_nonnegative check (attempt_count >= 0)
+);
+
+alter table public.linkcraft_signup_rate_limits enable row level security;
+
+revoke all on table public.linkcraft_signup_rate_limits from anon, authenticated;
+grant select, insert, update, delete on table public.linkcraft_signup_rate_limits to service_role;
+
+drop policy if exists linkcraft_signup_rate_limits_deny_public on public.linkcraft_signup_rate_limits;
+create policy linkcraft_signup_rate_limits_deny_public
+on public.linkcraft_signup_rate_limits
+for all
+to anon, authenticated
+using (false)
+with check (false);
+
+drop function if exists public.linkcraft_consume_signup_rate_limit(text, integer, integer);
+create function public.linkcraft_consume_signup_rate_limit(
+  p_bucket text,
+  p_limit integer,
+  p_window_seconds integer
+)
+returns boolean
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  v_count integer;
+begin
+  if p_limit < 1 or p_window_seconds < 1 then
+    raise exception 'Invalid rate limit configuration';
+  end if;
+
+  insert into public.linkcraft_signup_rate_limits (
+    bucket,
+    window_started_at,
+    attempt_count,
+    updated_at
+  )
+  values (
+    p_bucket,
+    now(),
+    1,
+    now()
+  )
+  on conflict (bucket) do update
+  set
+    attempt_count = case
+      when public.linkcraft_signup_rate_limits.window_started_at <= now() - make_interval(secs => p_window_seconds)
+        then 1
+      else public.linkcraft_signup_rate_limits.attempt_count + 1
+    end,
+    window_started_at = case
+      when public.linkcraft_signup_rate_limits.window_started_at <= now() - make_interval(secs => p_window_seconds)
+        then now()
+      else public.linkcraft_signup_rate_limits.window_started_at
+    end,
+    updated_at = now()
+  returning attempt_count into v_count;
+
+  return v_count <= p_limit;
+end;
+$$;
+
+revoke execute on function public.linkcraft_consume_signup_rate_limit(text, integer, integer) from public, anon, authenticated;
+grant execute on function public.linkcraft_consume_signup_rate_limit(text, integer, integer) to service_role;

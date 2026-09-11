@@ -48,11 +48,14 @@ export async function supabaseAuthFetch(path: string, init: RequestInit = {}) {
   });
 }
 
-export async function supabaseSecretFunctionFetch(name: string, init: RequestInit = {}) {
-  const { baseUrl, secretKey } = getSupabaseConfig();
-  const headers = new Headers(init.headers);
+export async function supabasePublicFunctionFetch(name: string, init: RequestInit = {}) {
+  const baseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "");
 
-  headers.set("apikey", secretKey);
+  if (!baseUrl) {
+    throw new Error("Supabase URL is not configured.");
+  }
+
+  const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
 
   if (init.body && !headers.has("Content-Type")) {
