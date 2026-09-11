@@ -10,6 +10,7 @@ const freeFeatures = [
   "Link icons",
   "2 free themes",
   "Shareable LinkCraft URL",
+  "Basic views, clicks & CTR analytics",
 ];
 
 const proFeatures = [
