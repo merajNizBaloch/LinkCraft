@@ -131,7 +131,7 @@ export default function LinkPageLanding() {
         <div className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-20">
           <div className="text-center">
             <div className="section-kicker">Simple pricing</div>
-            <h2 className="mt-3 text-4xl font-black tracking-[-0.055em]">Start free. Upgrade when your page grows.</h2>
+            <h2 className="mt-3 text-4xl font-black tracking-[-0.055em]">Start free. Upgrade once for the whole year.</h2>
           </div>
           <div className="mx-auto mt-10 grid max-w-4xl gap-5 md:grid-cols-2">
             <div className="rounded-[30px] border border-[#deded8] bg-[#fafaf8] p-7">
@@ -145,14 +145,20 @@ export default function LinkPageLanding() {
             </div>
 
             <div className="relative overflow-hidden rounded-[30px] bg-[#11110f] p-7 text-white shadow-[0_25px_70px_rgba(17,17,15,.18)]">
-              <div className="absolute right-0 top-0 rounded-bl-2xl bg-[#ff5c35] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em]">Pro</div>
+              <div className="absolute right-0 top-0 rounded-bl-2xl bg-[#ff5c35] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em]">Yearly · Best value</div>
               <div className="flex items-center gap-2 text-sm font-black"><Crown size={17} className="text-[#ff7a59]" /> LinkCraft Pro</div>
-              <div className="mt-4 text-4xl font-black tracking-[-0.05em]">Rs. 499<span className="text-base text-white/45"> / month</span></div>
-              <p className="mt-2 text-sm text-white/50">For creators, professionals and businesses that want more control.</p>
+              <div className="mt-4 flex flex-wrap items-end gap-x-2 gap-y-1">
+                <div className="text-4xl font-black tracking-[-0.05em]">Rs. 4,499</div>
+                <div className="pb-1 text-base font-bold text-white/45">/ year</div>
+              </div>
+              <div className="mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/55">
+                ≈ Rs. 375/month · billed yearly
+              </div>
+              <p className="mt-3 text-sm text-white/50">One annual payment for creators, professionals and businesses that want more control.</p>
               <div className="mt-7 grid gap-3">
                 {proFeatures.map((feature) => <div key={feature} className="flex items-center gap-2 text-sm font-semibold"><Check size={16} className="text-[#ff7a59]" />{feature}</div>)}
               </div>
-              <Link href="/link-page/dashboard" className="mt-8 flex items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-black text-[#11110f]">Start with Free</Link>
+              <Link href="/link-page/dashboard" className="mt-8 flex items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-black text-[#11110f]">Start free, upgrade yearly</Link>
             </div>
           </div>
         </div>
