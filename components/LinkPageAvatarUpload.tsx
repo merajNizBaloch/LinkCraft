@@ -134,6 +134,7 @@ export function LinkPageAvatarUpload({
         avatarUrl?: string;
         size?: number;
         error?: string;
+        persisted?: boolean;
       };
 
       if (!response.ok || !payload.avatarUrl) {
@@ -142,7 +143,9 @@ export function LinkPageAvatarUpload({
 
       onUploaded(payload.avatarUrl);
       setMessage(
-        `Uploaded · ${formatBytes(payload.size || compressed.size)} · 512px max WebP`,
+        payload.persisted
+          ? `Uploaded & saved · ${formatBytes(payload.size || compressed.size)} · WebP`
+          : `Uploaded · ${formatBytes(payload.size || compressed.size)} · save changes to publish`,
       );
     } catch (uploadError) {
       setMessage("");
@@ -162,7 +165,7 @@ export function LinkPageAvatarUpload({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/avif,image/*"
+        accept="image/jpeg,image/png,image/webp,image/avif"
         className="hidden"
         onChange={(event) => void handleFile(event.target.files?.[0])}
       />
