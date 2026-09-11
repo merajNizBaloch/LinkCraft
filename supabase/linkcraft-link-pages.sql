@@ -29,14 +29,44 @@ create table if not exists public.linkcraft_profile_links (
   profile_id uuid not null references public.linkcraft_profiles(id) on delete cascade,
   title text not null,
   url text not null,
+  icon text not null default 'link',
   position integer not null default 0,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint linkcraft_profile_links_title_length check (char_length(title) between 1 and 80),
   constraint linkcraft_profile_links_url_protocol check (url ~* '^https?://'),
+  constraint linkcraft_profile_links_icon_check check (icon in (
+    'link','globe','instagram','facebook','youtube','linkedin','twitter',
+    'github','mail','phone','message','map-pin','shopping-bag','calendar',
+    'file-text','briefcase','music','camera'
+  )),
   constraint linkcraft_profile_links_position_nonnegative check (position >= 0)
 );
+
+
+
+-- Backfill icon support when upgrading an existing LinkCraft schema.
+alter table public.linkcraft_profile_links
+  add column if not exists icon text not null default 'link';
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'linkcraft_profile_links_icon_check'
+      and conrelid = 'public.linkcraft_profile_links'::regclass
+  ) then
+    alter table public.linkcraft_profile_links
+      add constraint linkcraft_profile_links_icon_check
+      check (icon in (
+        'link','globe','instagram','facebook','youtube','linkedin','twitter',
+        'github','mail','phone','message','map-pin','shopping-bag','calendar',
+        'file-text','briefcase','music','camera'
+      ));
+  end if;
+end $$;
 
 create index if not exists linkcraft_profile_links_profile_position_idx
   on public.linkcraft_profile_links (profile_id, position);

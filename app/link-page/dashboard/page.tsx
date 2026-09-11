@@ -15,6 +15,7 @@ import {
   Palette,
   Plus,
   Save,
+  Share2,
   Sparkles,
   Trash2,
   UserRound,
@@ -24,11 +25,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { LinkPageIconGlyph } from "@/components/LinkPageIconGlyph";
 import {
+  LINK_PAGE_ICONS,
   LINK_PAGE_THEMES,
   LinkPageItem,
   LinkPageProfile,
   LinkPageTheme,
+  isPremiumTheme,
 } from "@/lib/link-pages";
 
 const emptyProfile: LinkPageProfile = {
@@ -91,6 +95,7 @@ export default function LinkPageDashboard() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [previewTheme, setPreviewTheme] = useState<LinkPageTheme | null>(null);
 
   const publicUrl = profile.username
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/u/${profile.username}`
@@ -132,7 +137,10 @@ export default function LinkPageDashboard() {
     };
   }, [router]);
 
-  const theme = useMemo(() => themeClasses(profile.theme), [profile.theme]);
+  const activeTheme = previewTheme ?? profile.theme;
+  const theme = useMemo(() => themeClasses(activeTheme), [activeTheme]);
+  const previewingLockedTheme =
+    profile.plan !== "pro" && previewTheme !== null && isPremiumTheme(previewTheme);
 
   function updateLink(index: number, patch: Partial<LinkPageItem>) {
     setProfile((current) => ({
@@ -144,7 +152,7 @@ export default function LinkPageDashboard() {
   function addLink() {
     setProfile((current) => ({
       ...current,
-      links: [...current.links, { title: "New link", url: "", isActive: true }],
+      links: [...current.links, { title: "New link", url: "", icon: "link", isActive: true }],
     }));
   }
 
@@ -212,6 +220,24 @@ export default function LinkPageDashboard() {
     await navigator.clipboard.writeText(publicUrl);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1400);
+  }
+
+  async function sharePublicUrl() {
+    if (!publicUrl) return;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: profile.displayName || "My LinkCraft Page",
+          url: publicUrl,
+        });
+        return;
+      } catch (shareError) {
+        if (shareError instanceof DOMException && shareError.name === "AbortError") return;
+      }
+    }
+
+    await copyPublicUrl();
   }
 
   if (loading) {
@@ -297,6 +323,7 @@ export default function LinkPageDashboard() {
               <div className="mt-5 flex flex-wrap items-center gap-2 rounded-2xl bg-[#fafaf8] p-3">
                 <div className="min-w-0 flex-1 truncate px-2 text-xs font-bold text-[#64645f]">{publicUrl}</div>
                 <button onClick={copyPublicUrl} className="mini-action"><Copy size={14} /> {copied ? "Copied" : "Copy"}</button>
+                <button onClick={sharePublicUrl} className="mini-action"><Share2 size={14} /> Share</button>
                 <Link href={`/u/${profile.username}`} target="_blank" className="mini-action"><ExternalLink size={14} /> Open</Link>
               </div>
             )}
@@ -327,6 +354,22 @@ export default function LinkPageDashboard() {
                     <div className="min-w-0 flex-1 grid gap-3">
                       <input value={link.title} onChange={(event) => updateLink(index, { title: event.target.value })} className="w-full bg-transparent text-sm font-black outline-none" placeholder="Link title" />
                       <input value={link.url} onChange={(event) => updateLink(index, { url: event.target.value })} className="w-full rounded-xl border border-[#deded8] bg-white px-3 py-2.5 text-xs font-semibold outline-none focus:border-[#11110f]" placeholder="https://…" />
+                      <label className="flex items-center gap-2 rounded-xl border border-[#deded8] bg-white px-3 py-2">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#f4f4f0] text-[#55554f]">
+                          <LinkPageIconGlyph icon={link.icon || "link"} size={16} />
+                        </span>
+                        <span className="sr-only">Link icon</span>
+                        <select
+                          value={link.icon || "link"}
+                          onChange={(event) => updateLink(index, { icon: event.target.value as LinkPageItem["icon"] })}
+                          className="min-w-0 flex-1 bg-transparent text-xs font-bold outline-none"
+                          aria-label={`Icon for ${link.title || "link"}`}
+                        >
+                          {LINK_PAGE_ICONS.map((icon) => (
+                            <option key={icon.id} value={icon.id}>{icon.name}</option>
+                          ))}
+                        </select>
+                      </label>
                     </div>
                     <button onClick={() => updateLink(index, { isActive: !link.isActive })} className={`grid h-9 w-9 place-items-center rounded-xl border ${link.isActive ? "border-[#cfe3ca] bg-[#f1f8ef] text-[#4f7b47]" : "border-[#deded8] bg-white text-[#999992]"}`} aria-label={link.isActive ? "Hide link" : "Show link"}>
                       {link.isActive ? <Eye size={15} /> : <EyeOff size={15} />}
@@ -354,15 +397,21 @@ export default function LinkPageDashboard() {
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {LINK_PAGE_THEMES.map((option) => {
                 const locked = option.premium && profile.plan !== "pro";
-                const active = profile.theme === option.id;
+                const active = activeTheme === option.id;
 
                 return (
                   <button
                     key={option.id}
                     type="button"
-                    disabled={locked}
-                    onClick={() => setProfile({ ...profile, theme: option.id })}
-                    className={`relative overflow-hidden rounded-[20px] border p-3 text-left transition ${active ? "border-[#11110f] ring-2 ring-[#11110f]/5" : "border-[#deded8]"} ${locked ? "cursor-not-allowed opacity-55" : "hover:-translate-y-0.5"}`}
+                    onClick={() => {
+                      if (locked) {
+                        setPreviewTheme(option.id);
+                        return;
+                      }
+                      setPreviewTheme(null);
+                      setProfile({ ...profile, theme: option.id });
+                    }}
+                    className={`relative overflow-hidden rounded-[20px] border p-3 text-left transition hover:-translate-y-0.5 ${active ? "border-[#11110f] ring-2 ring-[#11110f]/5" : "border-[#deded8]"}`}
                   >
                     <div className={`h-20 rounded-[14px] ${themeClasses(option.id).surface}`}>
                       <div className="flex h-full items-center justify-center">
@@ -371,12 +420,26 @@ export default function LinkPageDashboard() {
                     </div>
                     <div className="mt-3 flex items-center justify-between gap-2">
                       <span className="text-xs font-black">{option.name}</span>
-                      {locked ? <Crown size={14} className="text-[#ff5c35]" /> : active ? <Check size={14} /> : null}
+                      {locked ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#ff5c35]">
+                          Preview <Crown size={13} />
+                        </span>
+                      ) : active ? <Check size={14} /> : null}
                     </div>
                   </button>
                 );
               })}
             </div>
+
+            {previewingLockedTheme && (
+              <div className="mt-4 flex items-center justify-between gap-3 rounded-[18px] border border-[#ffd5c9] bg-[#fff2ed] px-4 py-3 text-xs">
+                <div>
+                  <span className="font-black">Preview only.</span>
+                  <span className="ml-1 text-[#7b625a]">This Pro theme is visible in the preview but will not be saved to your Free page.</span>
+                </div>
+                <button type="button" onClick={() => setPreviewTheme(null)} className="shrink-0 rounded-lg bg-white px-3 py-1.5 font-black">Exit preview</button>
+              </div>
+            )}
 
             {profile.plan !== "pro" && (
               <div className="mt-5 flex flex-col gap-4 rounded-[22px] bg-[#11110f] p-5 text-white sm:flex-row sm:items-center sm:justify-between">
@@ -412,8 +475,11 @@ export default function LinkPageDashboard() {
                 <div className="mt-7 grid gap-3">
                   {profile.links.filter((link) => link.isActive).map((link, index) => (
                     <div key={link.id || index} className={`flex items-center justify-between rounded-2xl px-4 py-4 text-left text-sm font-black shadow-sm ${theme.button}`}>
-                      <span className="truncate pr-3">{link.title || "Untitled link"}</span>
-                      <ExternalLink size={15} className="shrink-0 opacity-55" />
+                      <span className="flex min-w-0 items-center gap-3">
+                        <LinkPageIconGlyph icon={link.icon || "link"} size={17} className="shrink-0 opacity-75" />
+                        <span className="truncate">{link.title || "Untitled link"}</span>
+                      </span>
+                      <ExternalLink size={15} className="ml-3 shrink-0 opacity-55" />
                     </div>
                   ))}
                   {!profile.links.some((link) => link.isActive) && (

@@ -7,10 +7,34 @@ export const LINK_PAGE_THEMES = [
 
 export type LinkPageTheme = (typeof LINK_PAGE_THEMES)[number]["id"];
 
+export const LINK_PAGE_ICONS = [
+  { id: "link", name: "Link" },
+  { id: "globe", name: "Website" },
+  { id: "instagram", name: "Instagram" },
+  { id: "facebook", name: "Facebook" },
+  { id: "youtube", name: "YouTube" },
+  { id: "linkedin", name: "LinkedIn" },
+  { id: "twitter", name: "Twitter / X" },
+  { id: "github", name: "GitHub" },
+  { id: "mail", name: "Email" },
+  { id: "phone", name: "Phone" },
+  { id: "message", name: "Message" },
+  { id: "map-pin", name: "Location" },
+  { id: "shopping-bag", name: "Shop" },
+  { id: "calendar", name: "Booking" },
+  { id: "file-text", name: "Document" },
+  { id: "briefcase", name: "Work" },
+  { id: "music", name: "Music" },
+  { id: "camera", name: "Media" },
+] as const;
+
+export type LinkPageIcon = (typeof LINK_PAGE_ICONS)[number]["id"];
+
 export type LinkPageItem = {
   id?: string;
   title: string;
   url: string;
+  icon: LinkPageIcon;
   isActive: boolean;
 };
 
@@ -66,4 +90,8 @@ export function normalizePublicLink(value: string) {
 
 export function isPremiumTheme(theme: LinkPageTheme) {
   return LINK_PAGE_THEMES.some((item) => item.id === theme && item.premium);
+}
+
+export function isValidLinkPageIcon(value: string): value is LinkPageIcon {
+  return LINK_PAGE_ICONS.some((item) => item.id === value);
 }
