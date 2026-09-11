@@ -247,6 +247,7 @@ export default function Home() {
             </div>
           </button>
           <div className="flex items-center gap-2">
+            <a href="/link-page" className="hidden rounded-full border border-[#ffd0c3] bg-[#fff0eb] px-4 py-2 text-xs font-black text-[#b93617] transition hover:-translate-y-0.5 hover:border-[#ff5c35] sm:block">Link Page</a>
             <a href="/free-qr-code-generator" className="hidden rounded-full border border-[#deded8] bg-white px-4 py-2 text-xs font-bold text-[#11110f] transition accent-button-hover md:block">Free QR</a>
             <a href="/shorten" className="hidden rounded-full bg-[#11110f] px-4 py-2 text-xs font-bold text-white transition accent-button-hover hover:-translate-y-0.5 sm:block">Shorten a link</a>
           </div>
@@ -428,7 +429,7 @@ export default function Home() {
         <div className="overflow-hidden rounded-[30px] bg-[#11110f] p-7 text-white md:p-10"><div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-end"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ff8a6d]">LinkCraft</div><h2 className="mt-3 max-w-2xl text-3xl font-black tracking-[-0.05em] md:text-4xl">Small link tasks should not need seven different websites.</h2><p className="mt-4 max-w-xl text-sm leading-6 text-white/50">Keep shortening, QR creation, cleanup and campaign utilities in one coherent workspace.</p></div><a href="/shorten" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-black text-[#11110f] transition accent-button-hover hover:-translate-y-0.5">Create short link <ArrowRight size={16} /></a></div></div>
       </section>
 
-      <footer className="border-t border-[#deded8] px-5 py-7 md:px-8"><div className="mx-auto flex max-w-7xl flex-col gap-4 text-xs text-[#777772] sm:flex-row sm:items-center sm:justify-between"><span className="inline-flex items-center gap-2"><Image src="/linkcraft-mark.svg" alt="" width={24} height={24} /><span><strong className="text-[#11110f]">Link<span className="text-[#ff5c35]">Craft</span></strong> · Free link utilities by TechCraft</span></span><nav className="flex flex-wrap gap-4"><a className="footer-link" href="/free-qr-code-generator">Free QR Generator</a><a className="footer-link" href="/free-link-tools">Free Link Tools</a><a className="footer-link" href="/shorten">URL Shortener</a></nav></div></footer>
+      <footer className="border-t border-[#deded8] px-5 py-7 md:px-8"><div className="mx-auto flex max-w-7xl flex-col gap-4 text-xs text-[#777772] sm:flex-row sm:items-center sm:justify-between"><span className="inline-flex items-center gap-2"><Image src="/linkcraft-mark.svg" alt="" width={24} height={24} /><span><strong className="text-[#11110f]">Link<span className="text-[#ff5c35]">Craft</span></strong> · Free link utilities by TechCraft</span></span><nav className="flex flex-wrap gap-4"><a className="footer-link" href="/free-qr-code-generator">Free QR Generator</a><a className="footer-link" href="/free-link-tools">Free Link Tools</a><a className="footer-link" href="/shorten">URL Shortener</a><a className="footer-link" href="/link-page">Link Pages</a></nav></div></footer>
     </main>
   );
 }
