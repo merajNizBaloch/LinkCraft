@@ -6,6 +6,7 @@ import {
   setAuthCookies,
   supabaseAuthFetch,
 } from "@/lib/supabase/auth";
+import { getLinkCraftAuthEmail, normalizeLinkCraftEmail } from "@/lib/linkcraft-auth-identity";
 
 export const runtime = "nodejs";
 
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Send a valid login request." }, { status: 400 });
   }
 
-  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  const email = typeof body.email === "string" ? normalizeLinkCraftEmail(body.email) : "";
   const password = typeof body.password === "string" ? body.password : "";
 
   if (!email || !password) {
@@ -28,7 +29,10 @@ export async function POST(request: Request) {
   try {
     const authResponse = await supabaseAuthFetch("token?grant_type=password", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({
+        email: getLinkCraftAuthEmail(email),
+        password,
+      }),
     });
 
     if (!authResponse.ok) {
