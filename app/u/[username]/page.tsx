@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { LinkPageAnalyticsTracker } from "@/components/LinkPageAnalyticsTracker";
 import { LinkPageIconGlyph } from "@/components/LinkPageIconGlyph";
 import { SharePageButton } from "@/components/SharePageButton";
 import type { LinkPageIcon, LinkPageTheme } from "@/lib/link-pages";
@@ -160,6 +161,7 @@ export default async function PublicLinkPage(context: PageContext) {
 
   return (
     <main className={`min-h-screen px-5 py-8 md:py-12 ${theme.page}`}>
+      <LinkPageAnalyticsTracker username={profile.username} />
       <div className="mx-auto max-w-[620px]">
         <div className="mb-5 flex justify-end">
           <SharePageButton title={profile.display_name || `@${profile.username} on LinkCraft`} />
@@ -193,7 +195,7 @@ export default async function PublicLinkPage(context: PageContext) {
           {links.map((item) => (
             <a
               key={item.id}
-              href={item.url}
+              href={`/go/${item.id}`}
               target="_blank"
               rel="noopener noreferrer"
               className={`group relative flex min-h-16 items-center justify-between rounded-[20px] px-5 py-4 text-sm font-black shadow-[0_8px_30px_rgba(0,0,0,.06)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(0,0,0,.11)] ${theme.button}`}
